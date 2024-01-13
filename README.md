@@ -1,9 +1,9 @@
 ![](https://codebuild.ap-south-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoibngrZm9wOWpSTzVmMDc2b04vaWM2MnJZallaWHBReUIyQVhDNi9wZDNHUGk0a1UrYVllNnVHQm5FMzkyUXMrN2Qyd2h4ekRSdHhCYTRmSFVGRVViVXUwPSIsIml2UGFyYW1ldGVyU3BlYyI6InpVeDR2dkU4dnZ2V0JaMkQiLCJtYXRlcmlhbFNldFNlcmlhbCI6Mn0%3D&branch=develop)
 # Student's Learning Platform backend
 
-# UNISLOVE-Back End
+# Back End
 
-Unislove backend containing All list API's and server hosted in port <3002>
+ Backend containing All list API's and server hosted in port <3002>
 
 ## Getting Started
 
@@ -37,7 +37,7 @@ Requirements for the software and other tools to build, test and push
    **Pre-Note:** After cloning the codebase, make sure ```DB_MIGRATE_FORCE``` and ```DB_MIGRATE_ALTER``` are seated as ```false``` in prod to prevent the data loses.
   ```DB_MIGRATE_FORCE=true``` can drop existed tables and recreate them. ```DB_MIGRATE_ALTER=true``` can alter existed tables instead of dropping them. it can help to prevent loosing data somewhat. but not relay on this always. 
 
-   - ```git clone https://github.com/Inqui-Lab-Foundation/unisolve-be.git```
+   - ```git clone https://github.com/Inqui-Lab-Foundation/nt-be.git```
    - ```yarn install``` || ```npm install```
    - ```yarn start:dev``` || ```npm start:dev``` This will start the application in development mode
    - ```yarn start:prod``` || ```npm start:prod```  This will start the application and run on port 3002
@@ -50,7 +50,7 @@ Requirements for the software and other tools to build, test and push
 ## Folder Structure
 
 ```
-unisolve-be                            # Project route directory
+nt-be                            # Project route directory
 ├──keys                                # Secret keys directory
 │  ├──jwt.key                          # JWT secret key
 │  └──jwt.pub                          # JWT public encryption key
