@@ -191,12 +191,6 @@ We use [Semantic Versioning](http://semver.org/) for versioning. For the version
 available, see the [tags on this
 repository](https://github.com/PurpleBooth/a-good-readme-template/tags).
 
-## Authors
-
-  - **Pradeep Gandla**
-  - **[Harishkumar](https://github.com/harishkumarreddy)**
-  - **[Aman Satija](https://amansatija.com)**
-  - **[Vamshi]()**
 
 See also the list of
 [contributors](https://github.com/PurpleBooth/a-good-readme-template/contributors)
