@@ -30,11 +30,13 @@ jobs:
           PRIVATE_KEY: ${{ secrets.NT_PRIVATE_KEY }}
           HOSTNAME: ${{ secrets.NT_DEV_HOSTNAME }}
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 400 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${HOSTNAME} '
+           echo "$PRIVATE_KEY" > ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa
+           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${HOSTNAME} '
             cd /home/ubuntu/aim_be &&
             git checkout master &&
             git pull origin &&
             npm i -f && npm run build && npm run start:prod && pm2 save -f'
+           
+
 
   
