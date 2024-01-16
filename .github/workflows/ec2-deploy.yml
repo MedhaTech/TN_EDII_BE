@@ -30,8 +30,9 @@ jobs:
           PRIVATE_KEY: ${{ secrets.NT_PRIVATE_KEY }}
           HOSTNAME: ${{ secrets.NT_DEV_HOSTNAME }}
         run: |
-           echo "$PRIVATE_KEY" > ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa
-           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${HOSTNAME} '
+           mkdir -p $HOME/.ssh  # Ensure the .ssh directory exists
+           echo "$PRIVATE_KEY" > $HOME/.ssh/id_rsa && chmod 400 $HOME/.ssh/id_rsa
+           ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/id_rsa ubuntu@${HOSTNAME} '
             cd /home/ubuntu/aim_be &&
             git checkout master &&
             git pull origin &&
