@@ -31,7 +31,7 @@ jobs:
           HOSTNAME: ${{ secrets.NT_DEV_HOSTNAME }}
         run: |
            echo "$PRIVATE_KEY" > private_key && chmod 400 private_key
-           ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${HOSTNAME} '
+           ssh -o StrictHostKeyChecking=no -i private_key ubuntu@3.109.59.59 '
             cd /home/ubuntu/aim_be &&
             git checkout master &&
             git pull origin &&
