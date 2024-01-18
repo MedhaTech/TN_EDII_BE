@@ -34,7 +34,7 @@ jobs:
            ssh -o StrictHostKeyChecking=no -i private_key ubuntu@3.109.59.59 '
             cd /home/ubuntu/aim_be &&
             git pull origin master &&
-            npm i -f && npm run build && npm run start:prod && pm2 save -f'
+            npm i -f && NODE_OPTIONS="--max-old-space-size=1024" npm run build && npm run start:prod && pm2 save -f'
            
 
 
