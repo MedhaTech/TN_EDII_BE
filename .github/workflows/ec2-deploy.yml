@@ -33,6 +33,7 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 400 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${{secrets.HOSTNAME}} '
+          ssh -o ServerAliveInterval=60 ubuntu@${{secrets.HOSTNAME}}
             cd /home/ubuntu/aim_be &&
             git checkout development &&
             git pull origin development &&
