@@ -36,7 +36,7 @@ jobs:
             cd /home/ubuntu/aim_be &&
             git checkout development &&
             git pull origin development &&
-            npm i -f && npm run build && npm run start:prod && pm2 save -f'
+            npm i -f && NODE_OPTIONS="--max-old-space-size=1024" npm run build && npm run start:prod && pm2 save -f'
 
       
   
