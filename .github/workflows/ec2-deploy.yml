@@ -3,7 +3,7 @@ name: Deployment
 
 on:
   push:
-    branches: [development, testing]
+    branches: development
 
 jobs:
   #First we will see the application build or not , then we will deploy in EC2
