@@ -10,8 +10,6 @@ phases:
       - npm install
   build:
      commands:
-      - aws s3 cp s3://aim-cicd-1dcfcd7/dev/.env .
-      - cat .env
       - chmod +x ./scripts/*.sh
       - echo npm run build
       - npm run build
