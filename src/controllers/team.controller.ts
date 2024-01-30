@@ -303,6 +303,7 @@ export default class TeamController extends BaseController {
             // if (!req.body.team_name) {
             //     throw badRequest(speeches.TEAM_NAME_REQUIRED);
             // }
+            req.body['financial_year_id'] = 1;
             const getUserIdFromMentorId = await mentor.findOne({
                 attributes: ["user_id", "created_by"], where: { mentor_id: req.body.mentor_id }
             });
@@ -477,7 +478,7 @@ export default class TeamController extends BaseController {
                 return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
             }
             const {team_id} = newREQQuery;
-            const result  = await db.query(`SELECT team_id,team_name,moc_name,moc_gender,moc_email,moc_phone FROM teams where team_id = ${team_id};`,{ type: QueryTypes.SELECT });
+            const result  = await db.query(`SELECT team_id,team_name FROM teams where team_id = ${team_id};`,{ type: QueryTypes.SELECT });
             res.status(200).send(dispatcher(res, result, "success"))
         }catch (error) {
             next(error);

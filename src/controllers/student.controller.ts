@@ -123,11 +123,7 @@ export default class StudentController extends BaseController {
                         attributes: [
                             'team_id',
                             'team_name',
-                            'mentor_id',
-                            'moc_name',
-                            'moc_gender',
-                            'moc_email',
-                            'moc_phone'
+                            'mentor_id'
                         ],
                         include: {
                             model: mentor,
@@ -179,11 +175,7 @@ export default class StudentController extends BaseController {
                             model: team,
                             attributes: [
                                 'team_id',
-                                'team_name',
-                                'moc_name',
-                                'moc_gender',
-                                'moc_email',
-                                'moc_phone'
+                                'team_name'
                             ],
                             include: {
                                 model: mentor,

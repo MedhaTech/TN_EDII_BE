@@ -25,6 +25,7 @@ import { student } from '../models/student.model';
 import { constents } from '../configs/constents.config';
 import { organization } from '../models/organization.model';
 import validationMiddleware from '../middlewares/validation.middleware';
+import { institutions } from '../models/institutions.model';
 
 export default class MentorController extends BaseController {
     model = "mentor";
@@ -348,8 +349,8 @@ export default class MentorController extends BaseController {
     }
     // TODO: update the register flow by adding a flag called reg_statue in mentor tables
     private async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (!req.body.organization_code || req.body.organization_code === "") return res.status(406).send(dispatcher(res, speeches.ORG_CODE_REQUIRED, 'error', speeches.NOT_ACCEPTABLE, 406));
-        const org = await this.authService.checkOrgDetails(req.body.organization_code);
+        if (!req.body.institution_code || req.body.institution_code === "") return res.status(406).send(dispatcher(res, speeches.ORG_CODE_REQUIRED, 'error', speeches.NOT_ACCEPTABLE, 406));
+        const org = await this.authService.checkOrgDetails(req.body.institution_code);
         if (!org) {
             return res.status(406).send(dispatcher(res, org, 'error', speeches.ORG_CODE_NOT_EXISTS, 406));
         }
@@ -357,6 +358,8 @@ export default class MentorController extends BaseController {
             return res.status(406).send(dispatcher(res, null, 'error', speeches.USER_ROLE_REQUIRED, 406));
         }
         req.body['reg_status'] = '3';
+        req.body['full_name'] = req.body.mentor_name;
+        req.body['financial_year_id'] = 1;
         if (!req.body.password || req.body.password == null) req.body.password = '';
         const result: any = await this.authService.mentorRegister(req.body);
         if (result && result.output && result.output.payload && result.output.payload.message == 'Email') {
@@ -397,16 +400,12 @@ export default class MentorController extends BaseController {
             if (!result) {
                 return res.status(404).send(dispatcher(res, result, 'error', speeches.USER_NOT_FOUND));
             }
-            // else if (result.error) {
-            //     return res.status(401).send(dispatcher(res, result.error, 'error', speeches.USER_RISTRICTED, 401));
-            // }
             else {
-                // mentorDetails = await this.authService.getServiceDetails('mentor', { user_id: result.data.user_id });
-                // result.data['mentor_id'] = mentorDetails.dataValues.mentor_id
                 const mentorData = await this.authService.crudService.findOne(mentor, {
                     where: { user_id: result.data.user_id },
                     include: {
-                        model: organization
+                        model: institutions,
+                        
                     }
                 });
                 if (!mentorData || mentorData instanceof Error) {
@@ -416,9 +415,8 @@ export default class MentorController extends BaseController {
                     return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_REG_STATUS));
                 }
                 result.data['mentor_id'] = mentorData.dataValues.mentor_id;
-                result.data['organization_name'] = mentorData.dataValues.organization.organization_name;
-                result.data['state'] = mentorData.dataValues.organization.state;
-                result.data['title'] = mentorData.dataValues.title;
+                result.data['institution_name'] = mentorData.dataValues.institution.dataValues.institution_name;
+                result.data['mentor_title'] = mentorData.dataValues.mentor_title;
                 return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
             }
         } catch (error) {
@@ -612,19 +610,15 @@ export default class MentorController extends BaseController {
     }
     private async mobileOpt(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const { username } = req.body;
-            if (!username) {
-                throw badRequest(speeches.USER_EMAIL_REQUIRED);
+            const { mobile } = req.body;
+            if (!mobile) {
+                throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
             }
             const result = await this.authService.mobileotp(req.body);
             if (result.error) {
-                if (result && result.error.output && result.error.output.payload && result.error.output.payload.message == 'Email') {
-                    return res.status(406).send(dispatcher(res, result.data, 'error', speeches.MENTOR_EXISTS, 406));
-                }else{
-                    return res.status(404).send(dispatcher(res, result.error, 'error', result.error));
-                }  
+                return res.status(404).send(dispatcher(res, result.error, 'error', result.error));
             } else {
-                return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.OTP_SEND_EMAIL, 202));
+                return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.OTP_SEND, 202));
             }
         } catch (error) {
             next(error)
