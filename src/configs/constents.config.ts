@@ -64,6 +64,39 @@ export const constents = {
     },
     default: 'ACTIVE'
   },
+  institutions_status_flags: {
+    list: {
+      'NEW': 'NEW',
+      'ACTIVE': 'ACTIVE',
+      'INACTIVE': 'INACTIVE',
+      'DELETED': 'DELETED',
+      'LOCKED': 'LOCKED'
+    },
+    default: 'ACTIVE'
+  },
+  place_type_status_flags: {
+    list: {
+      'METRO': 'METRO',
+      'URBAN': 'URBAN',
+      'SEMI-URBAN': 'SEMI-URBAN',
+      'RURAL': 'RURAL'
+    }
+  },
+  institution_type_flages:{
+    list : { 
+      'Anna University Engineering college':'Anna University Engineering college',
+      'Autonomous Engineering colleges':'Autonomous Engineering colleges',
+      'Deemed University':'Deemed University',
+      'Affiliated Engineering College':'Affiliated Engineering College',
+      'Arts & Science College (Regular)':'Arts & Science College (Regular)',
+      'Arts & Science (Deemed university)':'Arts & Science (Deemed university)',
+      'Polytechnic College':'Polytechnic College',
+      'ITI College':'ITI College',
+      'Veterinary College':'Veterinary College',
+      'Fisheries College':'Fisheries College',
+      'Agri College':'Agri College'
+    }
+  },
   support_tickets_status_flags: {
     list: {
       'OPEN': 'OPEN',

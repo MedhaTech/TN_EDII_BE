@@ -25,42 +25,121 @@ import { worksheet_response } from "../models/worksheet_response.model";
 import { mentor_topic_progress } from '../models/mentor_topic_progress.model';
 import { constents } from '../configs/constents.config';
 import AWS from 'aws-sdk';
+import { institutions } from '../models/institutions.model';
+import { places } from '../models/places.model';
+import { blocks } from '../models/blocks.model';
+import { taluks } from '../models/taluks.model';
+import { districts } from '../models/districts.model';
+import { states } from '../models/states.model';
+import { institution_types } from '../models/institution_types.model';
+import { institution_principals } from '../models/institution_principals.model';
 export default class authService {
     crudService: CRUDService = new CRUDService;
     private otp = '112233';
     
     /**
-     * find organization details using organization code and attach mentor details
-     * @param organization_code String
+     * find institution details using institution code and attach mentor details
+     * @param institution_code String
      * @returns object
      */
-    async checkOrgDetails(organization_code: any) {
+    async checkOrgDetails(institution_code: any) {
         try {
-            const org = await this.crudService.findOne(organization, {
+            const org = await this.crudService.findOne(institutions, {
                 where: {
-                    organization_code: organization_code,
+                    institution_code: institution_code,
                     status: {
                         [Op.or]: ['ACTIVE', 'NEW']
                     }
                 },
-                include: {
+                attributes :[
+                    "institution_id",
+                    "institution_code",
+                    "institution_name",
+                    "institution_name_vernacular"
+                ],
+                include: [
+                    {
+                        model: places,
+                        attributes:[
+                            'place_id',
+                            'place_type',
+                            'place_name',
+                            'place_name_vernacular'
+                        ],
+                        include :{
+                            model:blocks,
+                            attributes:[
+                                'block_id',
+                                'block_name',
+                                'block_name_vernacular'
+                            ],
+                            include :{
+                                model:taluks,
+                                attributes:[
+                                    'taluk_id',
+                                    'taluk_name',
+                                    'taluk_name_vernacular'
+                                ],
+                                include :{
+                                    model:districts,
+                                    attributes:[
+                                        'district_id',
+                                        'district_name',
+                                        'district_name_vernacular',
+                                        'district_headquarters',
+                                        'district_headquarters_vernacular'
+                                    ],
+                                    include :{
+                                        model:states,
+                                        attributes:[
+                                            'state_id',
+                                            'state_name',
+                                            'state_name_vernacular'     
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        model: institution_types,
+                        attributes:[
+                           'institution_type_id',
+                            'institution_type'
+                        ]
+                    },
+                    {
+                        model: institution_principals,
+                        attributes:[
+                           'institution_principal_id',
+                            'principal_name',
+                            'principal_name_vernacular',
+                            'principal_email',
+                            'principal_mobile',
+                            'ed_cell_coordinator_name',
+                            'ed_cell_coordinator_name_vernacular',
+                            'ed_cell_coordinator_email',
+                            'ed_cell_coordinator_mobile'
+                        ]
+                    },
+                    {
                     model: mentor,
                     attributes: [
                         "mentor_id",
-                        'user_id',
-                        'full_name',
-                        'mobile',
-                        'whatapp_mobile',
-                        'gender',
-                        'title'
+                        "financial_year_id",
+                        "user_id",
+                        "institution_id",
+                        "mentor_title",
+                        "mentor_name",
+                        "mentor_name_vernacular",
+                        "mentor_mobile",
+                        "mentor_whatapp_mobile",
+                        "mentor_email",
+                        "date_of_birth",
+                        "gender"
                     ],
-                    include: {
-                        model: user,
-                        attributes: [
-                            'username'
-                        ]
-                    }
-                }
+                }   
+            ]
             })
             return org;
         } catch (error) {
@@ -608,14 +687,14 @@ export default class authService {
      async triggerOtpMsg(mobile: any,template_id:any) {
         try {
             let otp
-            // if(process.env.MOBILE_SMS_URl != ""){
-            //     otp = await axios.get(`${process.env.MOBILE_SMS_URl}${mobile}&template_id=${template_id}`)
-            //     return otp.data.otp;
-            // }
-            // else{
-                //otp = Math.random().toFixed(6).substr(-6);
+            if(process.env.MOBILE_SMS_URl != ""){
+                otp = await axios.get(`${process.env.MOBILE_SMS_URl}${mobile}&template_id=${template_id}`)
+                return otp.data.otp;
+            }
+            else{
                 otp='112233' 
                 return otp;
+            }
         } catch (error: any) {
             return error
         }
@@ -842,19 +921,16 @@ export default class authService {
     async mobileotp(requestBody: any) {
         let result: any = {};
         try {
-            const user_data = await this.crudService.findOne(user, { where: { username: requestBody.username } });
-            if (user_data) {
-                throw badRequest('Email');
-            }
-            else{
-                const otp = await this.triggerEmail(requestBody.username,1,'no');
+            const otp = await this.triggerOtpMsg(requestBody.mobile,1);
             if (otp instanceof Error) {
                 throw otp;
             }
-            const hashedPassword = await this.encryptGlobal(JSON.stringify(otp.otp));
-            result.data = hashedPassword;
+            const key = "PMBXDE9N53V89K65"
+            const stringotp = String(otp);
+            const encryptedValue = CryptoJS.AES.encrypt(stringotp, key).toString();
+            const encoded = btoa(encryptedValue);
+            result.data = encoded;
             return result;
-            }
         } catch (error) {
             result['error'] = error;
             return result;
