@@ -24,6 +24,13 @@ import { badRequest, internal, notFound } from 'boom';
 import { find } from 'lodash';
 import { string } from 'joi';
 import db from "../utils/dbconnection.util"
+import { institutions } from '../models/institutions.model';
+import { places } from '../models/places.model';
+import { blocks } from '../models/blocks.model';
+import { taluks } from '../models/taluks.model';
+import { districts } from '../models/districts.model';
+import { states } from '../models/states.model';
+import { institution_types } from '../models/institution_types.model';
 
 export default class StudentController extends BaseController {
     model = "student";
@@ -128,28 +135,72 @@ export default class StudentController extends BaseController {
                         include: {
                             model: mentor,
                             attributes: [
-                                'organization_code',
-                                'full_name',
+                                'mentor_name',
                                 'gender',
-                                'mobile',
+                                'mentor_mobile'
                             ],
-                            include: {
-                                model: organization,
+                            include:
+                    {
+                        model: institutions,
+                        attributes: [
+                            "institution_id",
+                            "institution_code",
+                            "institution_name",
+                            "institution_name_vernacular"
+                        ],
+                        include: [
+                            {
+                                model: places,
                                 attributes: [
-                                    "organization_name",
-                                    'organization_code',
-                                    "unique_code",
-                                    "pin_code",
-                                    "category",
-                                    "principal_name",
-                                    "principal_mobile",
-                                    "city",
-                                    "district",
-                                    "state",
-                                    "country",
-                                    'address'
+                                    'place_id',
+                                    'place_type',
+                                    'place_name',
+                                    'place_name_vernacular'
                                 ],
+                                include: {
+                                    model: blocks,
+                                    attributes: [
+                                        'block_id',
+                                        'block_name',
+                                        'block_name_vernacular'
+                                    ],
+                                    include: {
+                                        model: taluks,
+                                        attributes: [
+                                            'taluk_id',
+                                            'taluk_name',
+                                            'taluk_name_vernacular'
+                                        ],
+                                        include: {
+                                            model: districts,
+                                            attributes: [
+                                                'district_id',
+                                                'district_name',
+                                                'district_name_vernacular',
+                                                'district_headquarters',
+                                                'district_headquarters_vernacular'
+                                            ],
+                                            include: {
+                                                model: states,
+                                                attributes: [
+                                                    'state_id',
+                                                    'state_name',
+                                                    'state_name_vernacular'
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
                             },
+                            {
+                                model: institution_types,
+                                attributes: [
+                                    'institution_type_id',
+                                    'institution_type'
+                                ]
+                            }
+                        ]
+                    }
                             
                         },
                     },
@@ -436,7 +487,7 @@ export default class StudentController extends BaseController {
             const mentorData = await this.authService.crudService.findOne(mentor, {
                 where: { mentor_id: teamDetails.dataValues.mentor_id },
                 include: {
-                    model: organization
+                    model: institutions
                 }
             });
             if (!mentorData || mentorData instanceof Error) {
@@ -445,9 +496,9 @@ export default class StudentController extends BaseController {
             if (mentorData.dataValues.reg_status !== '3') {
                 return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_REG_STATUS));
             }
-            result.data['organization_name'] = mentorData.dataValues.organization.organization_name;
-            result.data['district'] = mentorData.dataValues.organization.district;
-            result.data['state'] = mentorData.dataValues.organization.state;
+            result.data['institution_name'] = mentorData.dataValues.institution.dataValues.institution_name;
+            // result.data['district'] = mentorData.dataValues.organization.district;
+            // result.data['state'] = mentorData.dataValues.organization.state;
             return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
         }
     }
