@@ -26,6 +26,12 @@ import { constents } from '../configs/constents.config';
 import { organization } from '../models/organization.model';
 import validationMiddleware from '../middlewares/validation.middleware';
 import { institutions } from '../models/institutions.model';
+import { places } from '../models/places.model';
+import { blocks } from '../models/blocks.model';
+import { taluks } from '../models/taluks.model';
+import { districts } from '../models/districts.model';
+import { states } from '../models/states.model';
+import { institution_types } from '../models/institution_types.model';
 
 export default class MentorController extends BaseController {
     model = "mentor";
@@ -41,7 +47,7 @@ export default class MentorController extends BaseController {
     protected initializeRoutes(): void {
         //example route to add
         //this.router.get(`${this.path}/`, this.getData);
-        this.router.post(`${this.path}/register`, validationMiddleware(mentorRegSchema),this.register.bind(this));
+        this.router.post(`${this.path}/register`, validationMiddleware(mentorRegSchema), this.register.bind(this));
         this.router.post(`${this.path}/validateOtp`, this.validateOtp.bind(this));
         this.router.post(`${this.path}/login`, this.login.bind(this));
         this.router.get(`${this.path}/logout`, this.logout.bind(this));
@@ -54,9 +60,9 @@ export default class MentorController extends BaseController {
         this.router.put(`${this.path}/manualResetPassword`, this.manualResetPassword.bind(this));
         this.router.get(`${this.path}/regStatus`, this.getMentorRegStatus.bind(this));
         this.router.post(`${this.path}/bulkUpload`, this.bulkUpload.bind(this));
-        this.router.post(`${this.path}/mobileOtp`,this.mobileOpt.bind(this));
-        this.router.get(`${this.path}/mentorpdfdata`,this.mentorpdfdata.bind(this));
-        this.router.post(`${this.path}/triggerWelcomeEmail`,this.triggerWelcomeEmail.bind(this));
+        this.router.post(`${this.path}/mobileOtp`, this.mobileOpt.bind(this));
+        this.router.get(`${this.path}/mentorpdfdata`, this.mentorpdfdata.bind(this));
+        this.router.post(`${this.path}/triggerWelcomeEmail`, this.triggerWelcomeEmail.bind(this));
         super.initializeRoutes();
     }
     protected async autoFillUserDataForBulkUpload(req: Request, res: Response, modelLoaded: any, reqData: any = null) {
@@ -75,12 +81,12 @@ export default class MentorController extends BaseController {
     }
     protected async getMentorRegStatus(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const { quiz_survey_id } = req.params
             const { page, size, status } = newREQQuery;
@@ -156,18 +162,18 @@ export default class MentorController extends BaseController {
 
     //TODO: Override the getDate function for mentor and join org details and user details
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
-        } 
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
         try {
             let data: any;
             const { model, id } = req.params;
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const paramStatus: any = newREQQuery.status;
             if (model) {
@@ -210,40 +216,91 @@ export default class MentorController extends BaseController {
                 { state: { [Op.like]: newREQQuery.state } } :
                 { state: { [Op.like]: `%%` } }
             if (id) {
-                const deValue : any = await this.authService.decryptGlobal(req.params.id);
+                const deValue: any = await this.authService.decryptGlobal(req.params.id);
                 where[`${this.model}_id`] = JSON.parse(deValue);
                 data = await this.crudService.findOne(modelClass, {
-                    attributes: {
-                        include: [
-                            [
-                                db.literal(`( SELECT username FROM users AS u WHERE u.user_id = \`mentor\`.\`user_id\`)`), 'username_email'
-                            ]
-                        ]
-                    },
+                    attributes: [
+                        "mentor_id",
+                        "financial_year_id",
+                        "user_id",
+                        "institution_id",
+                        "mentor_title",
+                        "mentor_name",
+                        "mentor_name_vernacular",
+                        "mentor_mobile",
+                        "mentor_whatapp_mobile",
+                        "mentor_email",
+                        "date_of_birth",
+                        "gender"
+                    ],
                     where: {
                         [Op.and]: [
                             whereClauseStatusPart,
                             where,
                         ]
                     },
-                    include: {
-                        model: organization,
+                    include:
+                    {
+                        model: institutions,
                         attributes: [
-                            "organization_code",
-                            "organization_name",
-                            "organization_id",
-                            "principal_name",
-                            "principal_mobile",
-                            "principal_email",
-                            "city",
-                            "district",
-                            "state",
-                            "country",
-                            "category",
-                            "pin_code",
-                            "unique_code"
+                            "institution_id",
+                            "institution_code",
+                            "institution_name",
+                            "institution_name_vernacular"
+                        ],
+                        include: [
+                            {
+                                model: places,
+                                attributes: [
+                                    'place_id',
+                                    'place_type',
+                                    'place_name',
+                                    'place_name_vernacular'
+                                ],
+                                include: {
+                                    model: blocks,
+                                    attributes: [
+                                        'block_id',
+                                        'block_name',
+                                        'block_name_vernacular'
+                                    ],
+                                    include: {
+                                        model: taluks,
+                                        attributes: [
+                                            'taluk_id',
+                                            'taluk_name',
+                                            'taluk_name_vernacular'
+                                        ],
+                                        include: {
+                                            model: districts,
+                                            attributes: [
+                                                'district_id',
+                                                'district_name',
+                                                'district_name_vernacular',
+                                                'district_headquarters',
+                                                'district_headquarters_vernacular'
+                                            ],
+                                            include: {
+                                                model: states,
+                                                attributes: [
+                                                    'state_id',
+                                                    'state_name',
+                                                    'state_name_vernacular'
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                model: institution_types,
+                                attributes: [
+                                    'institution_type_id',
+                                    'institution_type'
+                                ]
+                            }
                         ]
-                    },
+                    }
                 });
             } else {
                 try {
@@ -311,14 +368,15 @@ export default class MentorController extends BaseController {
         }
     }
     protected async updateData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
-        } 
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
         try {
             const { model, id } = req.params;
             if (model) {
                 this.model = model;
             };
+            req.body['full_name'] = req.body.mentor_name;
             const user_id = res.locals.user_id
             const where: any = {};
             const newParamId = await this.authService.decryptGlobal(req.params.id);
@@ -405,7 +463,7 @@ export default class MentorController extends BaseController {
                     where: { user_id: result.data.user_id },
                     include: {
                         model: institutions,
-                        
+
                     }
                 });
                 if (!mentorData || mentorData instanceof Error) {
@@ -434,9 +492,9 @@ export default class MentorController extends BaseController {
     }
 
     private async changePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
-        } 
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
         const result = await this.authService.changePassword(req.body, res);
         if (!result) {
             return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_NOT_FOUND));
@@ -452,9 +510,9 @@ export default class MentorController extends BaseController {
 
     //TODO: Update flag reg_status on successful changed password
     private async updatePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
-        } 
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
         const result = await this.authService.updatePassword(req.body, res);
         if (!result) {
             return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_NOT_FOUND));
@@ -507,11 +565,11 @@ export default class MentorController extends BaseController {
     }
     //TODO: test this api and debug and fix any issues in testing if u see any ...!!
     private async deleteAllData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
-        } 
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
         try {
-            const mentor_user_id : any = await this.authService.decryptGlobal(req.params.mentor_user_id);
+            const mentor_user_id: any = await this.authService.decryptGlobal(req.params.mentor_user_id);
             // const { mobile } = req.body;
             if (!mentor_user_id) {
                 throw badRequest(speeches.USER_USERID_REQUIRED);
@@ -650,9 +708,9 @@ export default class MentorController extends BaseController {
         }
     }
     private async manualResetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
-        } 
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
         // accept the user_id or user_name from the req.body and update the password in the user table
         // perviously while student registration changes we have changed the password is changed to random generated UUID and stored and send in the payload,
         // now reset password use case is to change the password using user_id to some random generated ID and update the UUID also
@@ -753,18 +811,18 @@ export default class MentorController extends BaseController {
         });
     }
     protected async mentorpdfdata(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR'&& res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
-        } 
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
         try {
-            let data: any ={};
-            const { model} = req.params;
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let data: any = {};
+            const { model } = req.params;
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const id = newREQQuery.id;
             const user_id = newREQQuery.user_id;
@@ -772,7 +830,7 @@ export default class MentorController extends BaseController {
             if (model) {
                 this.model = model;
             };
-        
+
             const modelClass = await this.loadModel(model).catch(error => {
                 next(error)
             });
@@ -791,35 +849,35 @@ export default class MentorController extends BaseController {
                 whereClauseStatusPart = { "status": "ACTIVE" };
                 boolStatusWhereClauseRequired = true;
             };
-                where[`mentor_id`] = id;
-                data['mentorData'] = await this.crudService.findOne(modelClass, {
-                    where: {
-                        [Op.and]: [
-                            whereClauseStatusPart,
-                            where,
-                        ]
-                    },
-                    attributes:['mentor_id',
+            where[`mentor_id`] = id;
+            data['mentorData'] = await this.crudService.findOne(modelClass, {
+                where: {
+                    [Op.and]: [
+                        whereClauseStatusPart,
+                        where,
+                    ]
+                },
+                attributes: ['mentor_id',
                     "user_id",
                     "full_name",
                     "mobile"],
-                    include: {
-                        model: organization,
-                        attributes: [
-                            "organization_code",
-                            "organization_name",
-                            "district",
-                            "category"
-                        ]
-                    },
-                });
-                const currentProgress = await db.query(`SELECT count(*)as currentValue FROM unisolve_db.mentor_topic_progress where user_id = ${user_id}`,{ type: QueryTypes.SELECT })
-                data['currentProgress'] = Object.values(currentProgress[0]).toString();
-                data['totalProgress'] = baseConfig.MENTOR_COURSE
-                data['quizscores'] = await db.query(`SELECT score FROM unisolve_db.quiz_responses where user_id = ${user_id}`,{ type: QueryTypes.SELECT })
-                data['teamsCount'] = await db.query(`SELECT count(*) as teams_count FROM teams where mentor_id = ${id}`,{ type: QueryTypes.SELECT });
-                data['studentCount']= await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${id};`,{ type: QueryTypes.SELECT });
-                data['IdeaCount'] = await db.query(`SELECT count(*) as idea_count FROM challenge_responses join teams on challenge_responses.team_id = teams.team_id where mentor_id = ${id} && challenge_responses.status = 'SUBMITTED';`,{ type: QueryTypes.SELECT });
+                include: {
+                    model: organization,
+                    attributes: [
+                        "organization_code",
+                        "organization_name",
+                        "district",
+                        "category"
+                    ]
+                },
+            });
+            const currentProgress = await db.query(`SELECT count(*)as currentValue FROM unisolve_db.mentor_topic_progress where user_id = ${user_id}`, { type: QueryTypes.SELECT })
+            data['currentProgress'] = Object.values(currentProgress[0]).toString();
+            data['totalProgress'] = baseConfig.MENTOR_COURSE
+            data['quizscores'] = await db.query(`SELECT score FROM unisolve_db.quiz_responses where user_id = ${user_id}`, { type: QueryTypes.SELECT })
+            data['teamsCount'] = await db.query(`SELECT count(*) as teams_count FROM teams where mentor_id = ${id}`, { type: QueryTypes.SELECT });
+            data['studentCount'] = await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${id};`, { type: QueryTypes.SELECT });
+            data['IdeaCount'] = await db.query(`SELECT count(*) as idea_count FROM challenge_responses join teams on challenge_responses.team_id = teams.team_id where mentor_id = ${id} && challenge_responses.status = 'SUBMITTED';`, { type: QueryTypes.SELECT });
             if (!data || data instanceof Error) {
                 if (data != null) {
                     throw notFound(data.message)

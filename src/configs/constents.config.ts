@@ -97,6 +97,19 @@ export const constents = {
       'Agri College':'Agri College'
     }
   },
+  course_catrgory_flages:{
+    list:{
+      'UG':'UG',
+      'PG':'PG',
+      'DIPLOMA':'DIPLOMA'
+    }
+  },
+  special_category_flages:{
+    list:{
+      '0':'0',
+      "1":'1'
+    }
+  },
   support_tickets_status_flags: {
     list: {
       'OPEN': 'OPEN',
