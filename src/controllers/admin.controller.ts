@@ -27,17 +27,17 @@ export default class AdminController extends BaseController {
     protected initializeRoutes(): void {
         //example route to add
         //this.router.get(`${this.path}/`, this.getData);
-        this.router.post(`${this.path}/register`, validationMiddleware(adminRegSchema),this.register.bind(this));
+        this.router.post(`${this.path}/register`, validationMiddleware(adminRegSchema), this.register.bind(this));
         this.router.post(`${this.path}/login`, this.login.bind(this));
         this.router.get(`${this.path}/logout`, this.logout.bind(this));
         this.router.put(`${this.path}/changePassword`, this.changePassword.bind(this));
-        this.router.post(`${this.path}/IdeaInDraftEmail`,this.IdeaInDraftEmail.bind(this));
-        this.router.post(`${this.path}/IdeaNotInitiatedEmail`,this.IdeaNotInitiatedEmail.bind(this));
-        
+        this.router.post(`${this.path}/IdeaInDraftEmail`, this.IdeaInDraftEmail.bind(this));
+        this.router.post(`${this.path}/IdeaNotInitiatedEmail`, this.IdeaNotInitiatedEmail.bind(this));
+
         super.initializeRoutes();
     }
     protected getData(req: Request, res: Response, next: NextFunction) {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'EADMIN'){
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'EADMIN') {
             throw unauthorized(speeches.ROLE_ACCES_DECLINE)
         }
         return super.getData(req, res, next, [],
@@ -60,8 +60,8 @@ export default class AdminController extends BaseController {
     }
 
     protected async updateData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             const { model, id } = req.params;
@@ -110,14 +110,14 @@ export default class AdminController extends BaseController {
 
     private async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         let adminDetails: any;
-        let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
-            }
-        if (newREQQuery.eAdmin && newREQQuery.eAdmin == 'true') { req.body['role'] = 'EADMIN' } else if(newREQQuery.report && newREQQuery.report == 'true') { req.body['role'] = 'REPORT' } else{ req.body['role'] = 'ADMIN' }
+        let newREQQuery: any = {}
+        if (req.query.Data) {
+            let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+            newREQQuery = JSON.parse(newQuery);
+        } else if (Object.keys(req.query).length !== 0) {
+            return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
+        }
+        if (newREQQuery.eAdmin && newREQQuery.eAdmin == 'true') { req.body['role'] = 'EADMIN' } else if (newREQQuery.report && newREQQuery.report == 'true') { req.body['role'] = 'REPORT' } else { req.body['role'] = 'ADMIN' }
         const result = await this.authService.login(req.body);
         if (!result) {
             return res.status(404).send(dispatcher(res, result, 'error', speeches.USER_NOT_FOUND));
@@ -144,8 +144,8 @@ export default class AdminController extends BaseController {
     }
 
     private async changePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'EADMIN'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'EADMIN') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         const result = await this.authService.changePassword(req.body, res);
         if (!result) {
@@ -173,8 +173,8 @@ export default class AdminController extends BaseController {
     //     }
     // }
     private async IdeaInDraftEmail(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             const { date } = req.body;
@@ -215,18 +215,18 @@ export default class AdminController extends BaseController {
             JOIN users AS u ON cal.initiated_by = u.user_id
             WHERE
                 cal.status = 'DRAFT') AS combined_usernames;`, { type: QueryTypes.SELECT });
-           data= summary;
+            data = summary;
             const usernameArray = data[0].all_usernames;
             let arrayOfUsernames = usernameArray.split(', ');
-            const result = await this.authService.triggerBulkEmail(arrayOfUsernames,contentText,subject);
+            const result = await this.authService.triggerBulkEmail(arrayOfUsernames, contentText, subject);
             return res.status(200).send(dispatcher(res, result, 'Email sent'));
         } catch (error) {
             next(error);
         }
     }
     private async IdeaNotInitiatedEmail(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             const { date } = req.body;
@@ -280,11 +280,11 @@ export default class AdminController extends BaseController {
                         challenge_responses)) AS st
             JOIN students AS s ON st.team_id = s.team_id
             JOIN users AS u ON s.user_id = u.user_id) AS combined_usernames;`, { type: QueryTypes.SELECT });
-           data= summary;
+            data = summary;
             const usernameArray = data[0].all_usernames;
             let arrayOfUsernames = usernameArray.split(', ');
-            
-            const result = await this.authService.triggerBulkEmail(arrayOfUsernames,contentText,subject);
+
+            const result = await this.authService.triggerBulkEmail(arrayOfUsernames, contentText, subject);
             return res.status(200).send(dispatcher(res, result, 'Email sent'));
         } catch (error) {
             next(error);
