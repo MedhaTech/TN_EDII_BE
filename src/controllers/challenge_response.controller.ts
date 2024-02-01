@@ -824,41 +824,41 @@ export default class ChallengeResponsesController extends BaseController {
                     ]
                 }
             });
-            if (req.body.status == "SUBMITTED") {
-                const findingTheStudentsBasedOnTeamId = await this.crudService.findAll(student, {
-                    where: { team_id },
-                    attributes: [
-                        'badges',
-                        'student_id'
-                    ]
-                });
-                let studentBadgesObj: any = {}
-                let studentBadgesObjForNull: any = {}
-                findingTheStudentsBasedOnTeamId.forEach(async (s: any) => {
-                    if (!s.dataValues.badges) {
-                        studentBadgesObjForNull["the_change_maker"] = {
-                            completed_date: (new Date())
-                        }
-                        const studentBadgesObjForNullJson = JSON.stringify(studentBadgesObjForNull)
-                        await student.update({ badges: studentBadgesObjForNullJson }, {
-                            where: {
-                                student_id: s.dataValues.student_id
-                            }
-                        })
-                    } else {
-                        studentBadgesObj = JSON.parse(s.dataValues.badges);
-                        studentBadgesObj["the_change_maker"] = {
-                            completed_date: (new Date())
-                        }
-                        const studentBadgesObjJson = JSON.stringify(studentBadgesObj)
-                        await student.update({ badges: studentBadgesObjJson }, {
-                            where: {
-                                student_id: s.dataValues.student_id
-                            }
-                        })
-                    }
-                });
-            }
+            // if (req.body.status == "SUBMITTED") {
+            //     const findingTheStudentsBasedOnTeamId = await this.crudService.findAll(student, {
+            //         where: { team_id },
+            //         attributes: [
+            //             'badges',
+            //             'student_id'
+            //         ]
+            //     });
+            //     let studentBadgesObj: any = {}
+            //     let studentBadgesObjForNull: any = {}
+            //     findingTheStudentsBasedOnTeamId.forEach(async (s: any) => {
+            //         if (!s.dataValues.badges) {
+            //             studentBadgesObjForNull["the_change_maker"] = {
+            //                 completed_date: (new Date())
+            //             }
+            //             const studentBadgesObjForNullJson = JSON.stringify(studentBadgesObjForNull)
+            //             await student.update({ badges: studentBadgesObjForNullJson }, {
+            //                 where: {
+            //                     student_id: s.dataValues.student_id
+            //                 }
+            //             })
+            //         } else {
+            //             studentBadgesObj = JSON.parse(s.dataValues.badges);
+            //             studentBadgesObj["the_change_maker"] = {
+            //                 completed_date: (new Date())
+            //             }
+            //             const studentBadgesObjJson = JSON.stringify(studentBadgesObj)
+            //             await student.update({ badges: studentBadgesObjJson }, {
+            //                 where: {
+            //                     student_id: s.dataValues.student_id
+            //                 }
+            //             })
+            //         }
+            //     });
+            // }
             res.status(200).send(dispatcher(res, result))
         } catch (err) {
             next(err)
