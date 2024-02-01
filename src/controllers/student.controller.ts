@@ -431,8 +431,6 @@ export default class StudentController extends BaseController {
                     }
                 }
             }
-            let usernameforpass: any; 
-            let studentPassword: any;
             let cryptoEncryptedString: any;
             const teamName = await this.authService.crudService.findOne(team, {
                 attributes: ["team_name"], where: { team_id: req.body[0].team_id }
@@ -440,18 +438,15 @@ export default class StudentController extends BaseController {
             if (!teamName) throw notFound(speeches.TEAM_NOT_FOUND, 406);
             if (teamName instanceof Error) throw teamName;
             for (let student in req.body) {
-                const usernameforpass = req.body[student].username.split('@');
-                studentPassword = usernameforpass[0];
-                cryptoEncryptedString = await this.authService.generateCryptEncryption(studentPassword);
-                req.body[student].full_name = req.body[student].full_name.trim();
+                cryptoEncryptedString = await this.authService.generateCryptEncryption(req.body[student].username);
+                req.body[student].student_full_name = req.body[student].student_full_name.trim();
+                req.body[student].full_name = req.body[student].student_full_name.trim();
+                req.body[student].financial_year_id = 1;
                 req.body[student].role = 'STUDENT';
-                req.body[student].UUID = studentPassword;
                 req.body[student].password = cryptoEncryptedString;
-                req.body[student].qualification = cryptoEncryptedString; // password filed will hashed further by the backend system hence we saving the encrypted text in the qualification filed as for now just for debugging
                 req.body[student].created_by = res.locals.user_id
                 req.body[student].updated_by = res.locals.user_id
             }
-            // console.log(req.body);
             const responseFromService = await this.authService.bulkCreateStudentService(req.body);
             // if (responseFromService.error) return res.status(406).send(dispatcher(res, responseFromService.error, 'error', speeches.STUDENT_EXISTS, 406));
             return res.status(201).send(dispatcher(res, responseFromService, 'success', speeches.USER_REGISTERED_SUCCESSFULLY, 201));
