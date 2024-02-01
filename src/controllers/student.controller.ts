@@ -311,14 +311,11 @@ export default class StudentController extends BaseController {
             const where: any = {};
             where[`${this.model}_id`] = JSON.parse(newParamId);
             const modelLoaded = await this.loadModel(model);
+            req.body['full_name'] = req.body.student_full_name;
             const payload = this.autoFillTrackingColumns(req, res, modelLoaded);
             if (req.body.username) {
-                    const usernameforpass = req.body.username.split('@');
-                    const studentPassword = usernameforpass[0];
-                    const cryptoEncryptedString = await this.authService.generateCryptEncryption(studentPassword);
+                    const cryptoEncryptedString = await this.authService.generateCryptEncryption(req.body.username);
                     const username = req.body.username;
-                    payload['qualification'] = cryptoEncryptedString
-                    payload['UUID'] = studentPassword;
                     const studentDetails = await this.crudService.findOne(user, { where: { username: username } });
                     // console.log(studentDetails);
 
@@ -338,7 +335,7 @@ export default class StudentController extends BaseController {
                         throw user_data;
                     }
             }
-            if (req.body.full_name) {
+            if (req.body.student_full_name) {
                 const user_data = await this.crudService.update(user, {
                     full_name: payload.full_name
                 }, { where: { user_id: studentTableDetails.getDataValue("user_id") } });
@@ -531,12 +528,9 @@ export default class StudentController extends BaseController {
         const findUser: any = await this.crudService.findOne(user, { where: { user_id } });
         if (!findUser) throw badRequest(speeches.USER_NOT_FOUND);
         if (findUser instanceof Error) throw findUser; 
-        const usernameforpass = findUser.dataValues.username.split('@');
-        const studentPassword = usernameforpass[0];
-        const cryptoEncryptedString = await this.authService.generateCryptEncryption(studentPassword);
+        const cryptoEncryptedString = await this.authService.generateCryptEncryption(findUser.dataValues.username);
         try {
             req.body['username'] = findUser.dataValues.username;
-            req.body['UUID'] = studentPassword;
             req.body['encryptedString'] = cryptoEncryptedString;
             const result = await this.authService.studentResetPassword(req.body);
             if (!result) return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_NOT_FOUND));
