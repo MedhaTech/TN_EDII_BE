@@ -349,8 +349,7 @@ export default class DashboardController extends BaseController {
                             whereClauseStatusPartLiteral)}
                             )`),
                         "course_completed_date"
-                    ],
-                    "badges"
+                    ]
                 ]
             })
             if (!studentStatsResul) {
@@ -360,16 +359,16 @@ export default class DashboardController extends BaseController {
                 throw studentStatsResul
             }
             // console.log(studentStatsResul)
-            const badges = studentStatsResul.badges;
-            let badgesCount = 0
-            if (badges) {
-                const badgesParsed = JSON.parse(badges);
-                if (badgesParsed) {
-                    badgesCount = Object.keys(badgesParsed).length
-                }
-                delete studentStatsResul.badges;
-            }
-            studentStatsResul["badges_earned_count"] = badgesCount;
+            // const badges = studentStatsResul.badges;
+            // let badgesCount = 0
+            // if (badges) {
+            //     const badgesParsed = JSON.parse(badges);
+            //     if (badgesParsed) {
+            //         badgesCount = Object.keys(badgesParsed).length
+            //     }
+            //     delete studentStatsResul.badges;
+            // }
+            // studentStatsResul["badges_earned_count"] = badgesCount;
 
 
 
