@@ -426,20 +426,20 @@ export default class DashboardController extends BaseController {
                             )`),
                         "all_videos_count"
                     ],
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForAllToipcWorksheetCount(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "all_worksheets_count"
-                    ],
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForAllToipcQuizCount(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "all_quiz_count"
-                    ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForAllToipcWorksheetCount(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "all_worksheets_count"
+                    // ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForAllToipcQuizCount(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "all_quiz_count"
+                    // ],
                     [
                         db.literal(`(
                             ${serviceDashboard.getDbLieralForAllToipcsCompletedCount(addWhereClauseStatusPart,
@@ -454,34 +454,34 @@ export default class DashboardController extends BaseController {
                             )`),
                         "videos_completed_count"
                     ],
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForWorksheetToipcsCompletedCount(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "worksheet_completed_count"
-                    ],
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForQuizToipcsCompletedCount(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "quiz_completed_count"
-                    ],
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForPreSurveyStatus(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "pre_survey_status"
-                    ],
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForPostSurveyStatus(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "post_survey_status"
-                    ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForWorksheetToipcsCompletedCount(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "worksheet_completed_count"
+                    // ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForQuizToipcsCompletedCount(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "quiz_completed_count"
+                    // ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForPreSurveyStatus(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "pre_survey_status"
+                    // ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForPostSurveyStatus(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "post_survey_status"
+                    // ],
                     [
                         db.literal(`(
                             ${serviceDashboard.getDbLieralIdeaSubmission(addWhereClauseStatusPart,
@@ -489,10 +489,8 @@ export default class DashboardController extends BaseController {
                             )`),
                         "idea_submission"
                     ],
-                    "certificate",
-                    "badges",
-                    "created_at",
-                    "full_name",
+                    "certificate_issued",
+                    "student_full_name",
                     "user_id"
                 ]
             })
@@ -503,16 +501,16 @@ export default class DashboardController extends BaseController {
                 throw studentStatsResul
             }
             //console.log(studentStatsResul)
-            const badges = studentStatsResul.badges;
-            let badgesCount = 0
-            if (badges) {
-                const badgesParsed = JSON.parse(badges);
-                if (badgesParsed) {
-                    badgesCount = Object.keys(badgesParsed).length
-                }
-                delete studentStatsResul.badges;
-            }
-            studentStatsResul["badges_earned_count"] = badgesCount;
+            // const badges = studentStatsResul.badges;
+            // let badgesCount = 0
+            // if (badges) {
+            //     const badgesParsed = JSON.parse(badges);
+            //     if (badgesParsed) {
+            //         badgesCount = Object.keys(badgesParsed).length
+            //     }
+            //     delete studentStatsResul.badges;
+            // }
+            // studentStatsResul["badges_earned_count"] = badgesCount;
 
 
 
