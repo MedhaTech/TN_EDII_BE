@@ -305,37 +305,89 @@ export default class MentorController extends BaseController {
             } else {
                 try {
                     const responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
-                        attributes: {
-                            attributes: [
-                                "mentor_id",
-                                "user_id",
-                                "full_name",
-                                "otp",
-                                "mobile",
-                            ],
-                            include: [
-                                [
-                                    db.literal(`( SELECT username FROM users AS u WHERE u.user_id = \`mentor\`.\`user_id\`)`), 'username'
-                                ]
-                            ],
-                        },
+                        attributes: [
+                            "mentor_id",
+                            "financial_year_id",
+                            "user_id",
+                            "institution_id",
+                            "mentor_title",
+                            "mentor_name",
+                            "mentor_name_vernacular",
+                            "mentor_mobile",
+                            "mentor_whatapp_mobile",
+                            "mentor_email",
+                            "date_of_birth",
+                            "gender"
+                        ],
                         where: {
                             [Op.and]: [
                                 whereClauseStatusPart,
                                 // condition
                             ]
                         },
-                        include: {
-                            model: organization,
+                        include:
+                        {
+                            model: institutions,
                             attributes: [
-                                "organization_code",
-                                "organization_name",
-                                "organization_id",
-                                "district",
-                                "category",
-                                "state"
-                            ], where: whereClauseOfState,
-                            require: false
+                                "institution_id",
+                                "institution_code",
+                                "institution_name",
+                                "institution_name_vernacular"
+                            ],
+                            include: [
+                                {
+                                    model: places,
+                                    attributes: [
+                                        'place_id',
+                                        'place_type',
+                                        'place_name',
+                                        'place_name_vernacular'
+                                    ],
+                                    include: {
+                                        model: blocks,
+                                        attributes: [
+                                            'block_id',
+                                            'block_name',
+                                            'block_name_vernacular'
+                                        ],
+                                        include: {
+                                            model: taluks,
+                                            attributes: [
+                                                'taluk_id',
+                                                'taluk_name',
+                                                'taluk_name_vernacular'
+                                            ],
+                                            include: {
+                                                model: districts,
+                                                attributes: [
+                                                    'district_id',
+                                                    'district_name',
+                                                    'district_name_vernacular',
+                                                    'district_headquarters',
+                                                    'district_headquarters_vernacular'
+                                                ], 
+                                                // where: whereClauseOfState,
+                                                // require: false,
+                                                include: {
+                                                    model: states,
+                                                    attributes: [
+                                                        'state_id',
+                                                        'state_name',
+                                                        'state_name_vernacular'
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    model: institution_types,
+                                    attributes: [
+                                        'institution_type_id',
+                                        'institution_type'
+                                    ]
+                                }
+                            ]
                         }, limit, offset
                     })
                     const result = this.getPagingData(responseOfFindAndCountAll, page, limit);
