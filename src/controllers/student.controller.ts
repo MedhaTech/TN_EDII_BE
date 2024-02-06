@@ -47,7 +47,7 @@ export default class StudentController extends BaseController {
     protected initializeRoutes(): void {
         //example route to add
         //this.router.get(`${this.path}/`, this.getData);
-        this.router.post(`${this.path}/register`, validationMiddleware(studentRegSchema),this.register.bind(this));
+        this.router.post(`${this.path}/register`, validationMiddleware(studentRegSchema), this.register.bind(this));
         this.router.post(`${this.path}/addStudent`, this.register.bind(this));
         this.router.post(`${this.path}/bulkCreateStudent`, this.bulkCreateStudent.bind(this));
         this.router.post(`${this.path}/login`, validationMiddleware(studentLoginSchema), this.login.bind(this));
@@ -59,20 +59,20 @@ export default class StudentController extends BaseController {
         //this.router.post(`${this.path}/:student_user_id/badges`, this.addBadgeToStudent.bind(this));
         this.router.get(`${this.path}/:student_user_id/badges`, this.getStudentBadges.bind(this));
         this.router.get(`${this.path}/passwordUpdate`, this.studentPasswordUpdate.bind(this));
-        this.router.post(`${this.path}/stuIdeaSubmissionEmail`,this.stuIdeaSubmissionEmail.bind(this));
+        this.router.post(`${this.path}/stuIdeaSubmissionEmail`, this.stuIdeaSubmissionEmail.bind(this));
         super.initializeRoutes();
     }
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             let data: any;
             const { model, id } = req.params;
@@ -106,19 +106,20 @@ export default class StudentController extends BaseController {
             let stateFilter: any = {}
             if (state) {
                 stateFilter['whereClause'] = state && typeof state == 'string' && state !== 'All States' ? { state } : {}
-                stateFilter["liter"] = state && typeof state == 'string' && state !== 'All States' ? db.literal('`team->mentor->organization`.`state` = ' + JSON.stringify(state)) : {}
+                //stateFilter["liter"] = state && typeof state == 'string' && state !== 'All States' ? db.literal('`team->mentor->institutions->places->blocks->taluks->districts->states`.`state_name` = ' + JSON.stringify(state)) : {}
             }
             if (id) {
                 const newParamId = await this.authService.decryptGlobal(req.params.id);
                 where[`${this.model}_id`] = newParamId;
                 data = await this.crudService.findOne(modelClass, {
-                    attributes: {
-                        include: [
-                            [
-                                db.literal(`( SELECT username FROM users AS u WHERE u.user_id = \`student\`.\`user_id\`)`), 'username_email'
-                            ]
-                        ]
-                },
+                    attributes: [
+                        'student_full_name',
+                        'date_of_birth',
+                        'mobile',
+                        'email',
+                        'Gender',
+                        'Age'
+                    ],
                     where: {
                         [Op.and]: [
                             whereClauseStatusPart,
@@ -140,117 +141,159 @@ export default class StudentController extends BaseController {
                                 'mentor_mobile'
                             ],
                             include:
-                    {
-                        model: institutions,
-                        attributes: [
-                            "institution_id",
-                            "institution_code",
-                            "institution_name",
-                            "institution_name_vernacular"
-                        ],
-                        include: [
                             {
-                                model: places,
+                                model: institutions,
                                 attributes: [
-                                    'place_id',
-                                    'place_type',
-                                    'place_name',
-                                    'place_name_vernacular'
+                                    "institution_id",
+                                    "institution_code",
+                                    "institution_name",
+                                    "institution_name_vernacular"
                                 ],
-                                include: {
-                                    model: blocks,
-                                    attributes: [
-                                        'block_id',
-                                        'block_name',
-                                        'block_name_vernacular'
-                                    ],
-                                    include: {
-                                        model: taluks,
+                                include: [
+                                    {
+                                        model: places,
                                         attributes: [
-                                            'taluk_id',
-                                            'taluk_name',
-                                            'taluk_name_vernacular'
+                                            'place_id',
+                                            'place_type',
+                                            'place_name',
+                                            'place_name_vernacular'
                                         ],
                                         include: {
-                                            model: districts,
+                                            model: blocks,
                                             attributes: [
-                                                'district_id',
-                                                'district_name',
-                                                'district_name_vernacular',
-                                                'district_headquarters',
-                                                'district_headquarters_vernacular'
+                                                'block_id',
+                                                'block_name',
+                                                'block_name_vernacular'
                                             ],
                                             include: {
-                                                model: states,
+                                                model: taluks,
                                                 attributes: [
-                                                    'state_id',
-                                                    'state_name',
-                                                    'state_name_vernacular'
-                                                ]
+                                                    'taluk_id',
+                                                    'taluk_name',
+                                                    'taluk_name_vernacular'
+                                                ],
+                                                include: {
+                                                    model: districts,
+                                                    attributes: [
+                                                        'district_id',
+                                                        'district_name',
+                                                        'district_name_vernacular',
+                                                        'district_headquarters',
+                                                        'district_headquarters_vernacular'
+                                                    ],
+                                                    include: {
+                                                        model: states,
+                                                        attributes: [
+                                                            'state_id',
+                                                            'state_name',
+                                                            'state_name_vernacular'
+                                                        ]
+                                                    }
+                                                }
                                             }
                                         }
+                                    },
+                                    {
+                                        model: institution_types,
+                                        attributes: [
+                                            'institution_type_id',
+                                            'institution_type'
+                                        ]
                                     }
-                                }
-                            },
-                            {
-                                model: institution_types,
-                                attributes: [
-                                    'institution_type_id',
-                                    'institution_type'
                                 ]
                             }
-                        ]
-                    }
-                            
+
                         },
                     },
                 });
             } else {
                 try {
                     const responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
-                        attributes: {
-                            include: [
-                                [
-                                    db.literal(`( SELECT username FROM users AS u WHERE u.user_id = \`student\`.\`user_id\`)`), 'username_email'
-                                ]
-                            ]
-                    },
+                        attributes: [
+                            'student_full_name',
+                            'date_of_birth',
+                            'mobile',
+                            'email',
+                            'Gender',
+                            'Age'
+                        ],
                         where: {
                             [Op.and]: [
                                 whereClauseStatusPart,
-                                condition,
-                                stateFilter.liter
+                                // condition,
+                                stateFilter.whereClause
                             ]
                         },
                         include: {
-                            model: team,
+                            model: mentor,
                             attributes: [
-                                'team_id',
-                                'team_name'
+                                'mentor_name',
+                                'gender',
+                                'mentor_mobile'
                             ],
-                            include: {
-                                model: mentor,
+                            include:
+                            {
+                                model: institutions,
                                 attributes: [
-                                    'mentor_id',
-                                    'full_name'
+                                    "institution_id",
+                                    "institution_code",
+                                    "institution_name",
+                                    "institution_name_vernacular"
                                 ],
-                                include: {
-                                    where: stateFilter.whereClause,
-                                    required: false,
-                                    model: organization,
-                                    attributes: [
-                                        "organization_name",
-                                        'organization_code',
-                                        "unique_code",
-                                        "pin_code",
-                                        "category",
-                                        "city",
-                                        "district",
-                                        "state",
-                                        'address'
-                                    ]
-                                }
+                                include: [
+                                    {
+                                        model: places,
+                                        attributes: [
+                                            'place_id',
+                                            'place_type',
+                                            'place_name',
+                                            'place_name_vernacular'
+                                        ],
+                                        include: {
+                                            model: blocks,
+                                            attributes: [
+                                                'block_id',
+                                                'block_name',
+                                                'block_name_vernacular'
+                                            ],
+                                            include: {
+                                                model: taluks,
+                                                attributes: [
+                                                    'taluk_id',
+                                                    'taluk_name',
+                                                    'taluk_name_vernacular'
+                                                ],
+                                                include: {
+                                                    model: districts,
+                                                    attributes: [
+                                                        'district_id',
+                                                        'district_name',
+                                                        'district_name_vernacular',
+                                                        'district_headquarters',
+                                                        'district_headquarters_vernacular'
+                                                    ],
+                                                    include: {
+                                                        model: states,
+                                                        attributes: [
+                                                            'state_id',
+                                                            'state_name',
+                                                            'state_name_vernacular'
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    {
+                                        model: institution_types,
+                                        attributes: [
+                                            'institution_type_id',
+                                            'institution_type'
+                                        ]
+                                    }
+                                ]
                             }
+
                         }, limit, offset
                     });
                     const result = this.getPagingData(responseOfFindAndCountAll, page, limit);
@@ -284,8 +327,8 @@ export default class StudentController extends BaseController {
         }
     }
     protected async updateData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             const { model, id } = req.params;
@@ -293,7 +336,7 @@ export default class StudentController extends BaseController {
                 this.model = model;
             };
             const user_id = res.locals.user_id
-            const newParamId :any = await this.authService.decryptGlobal(req.params.id);
+            const newParamId: any = await this.authService.decryptGlobal(req.params.id);
             const studentTableDetails = await student.findOne(
                 {
                     where: {
@@ -314,26 +357,26 @@ export default class StudentController extends BaseController {
             req.body['full_name'] = req.body.student_full_name;
             const payload = this.autoFillTrackingColumns(req, res, modelLoaded);
             if (req.body.username) {
-                    const cryptoEncryptedString = await this.authService.generateCryptEncryption(req.body.username);
-                    const username = req.body.username;
-                    const studentDetails = await this.crudService.findOne(user, { where: { username: username } });
-                    // console.log(studentDetails);
+                const cryptoEncryptedString = await this.authService.generateCryptEncryption(req.body.username);
+                const username = req.body.username;
+                const studentDetails = await this.crudService.findOne(user, { where: { username: username } });
+                // console.log(studentDetails);
 
-                    if (studentDetails) {
-                        if (studentDetails.dataValues.username == username) throw badRequest(speeches.USER_EMAIL_EXISTED);
-                        if (studentDetails instanceof Error) throw studentDetails;
-                    };
-                    const user_data = await this.crudService.update(user, {
-                        full_name: payload.full_name,
-                        username: username,
-                        password: await bcrypt.hashSync(cryptoEncryptedString, process.env.SALT || baseConfig.SALT),
-                    }, { where: { user_id: studentTableDetails.getDataValue("user_id") } });
-                    if (!user_data) {
-                        throw internal()
-                    }
-                    if (user_data instanceof Error) {
-                        throw user_data;
-                    }
+                if (studentDetails) {
+                    if (studentDetails.dataValues.username == username) throw badRequest(speeches.USER_EMAIL_EXISTED);
+                    if (studentDetails instanceof Error) throw studentDetails;
+                };
+                const user_data = await this.crudService.update(user, {
+                    full_name: payload.full_name,
+                    username: username,
+                    password: await bcrypt.hashSync(cryptoEncryptedString, process.env.SALT || baseConfig.SALT),
+                }, { where: { user_id: studentTableDetails.getDataValue("user_id") } });
+                if (!user_data) {
+                    throw internal()
+                }
+                if (user_data instanceof Error) {
+                    throw user_data;
+                }
             }
             if (req.body.student_full_name) {
                 const user_data = await this.crudService.update(user, {
@@ -360,8 +403,8 @@ export default class StudentController extends BaseController {
         }
     }
     protected async deleteData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             const { model, id } = req.params;
@@ -383,7 +426,7 @@ export default class StudentController extends BaseController {
     private async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             // const randomGeneratedSixDigitID = this.nanoid();
-            const { team_id ,username} = req.body;
+            const { team_id, username } = req.body;
             const cryptoEncryptedString = await this.authService.generateCryptEncryption(username);
             req.body['full_name'] = req.body.student_full_name;
             req.body['financial_year_id'] = 1;
@@ -500,8 +543,8 @@ export default class StudentController extends BaseController {
         }
     }
     private async changePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         const result = await this.authService.changePassword(req.body, res);
         if (!result) {
@@ -516,8 +559,8 @@ export default class StudentController extends BaseController {
         }
     }
     private async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         // accept the user_id or user_name from the req.body and update the password in the user table
         // perviously while student registration changes we have changed the password is changed to random generated UUID and stored and send in the payload,
@@ -527,7 +570,7 @@ export default class StudentController extends BaseController {
         if (!user_id) throw badRequest(speeches.USER_USERID_REQUIRED);
         const findUser: any = await this.crudService.findOne(user, { where: { user_id } });
         if (!findUser) throw badRequest(speeches.USER_NOT_FOUND);
-        if (findUser instanceof Error) throw findUser; 
+        if (findUser instanceof Error) throw findUser;
         const cryptoEncryptedString = await this.authService.generateCryptEncryption(findUser.dataValues.username);
         try {
             req.body['username'] = findUser.dataValues.username;
@@ -643,12 +686,12 @@ export default class StudentController extends BaseController {
     //     }
     // }
     private async getStudentBadges(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         //todo: implement this api ...!!
         try {
-            const student_user_id : any = await this.authService.decryptGlobal(req.params.student_user_id);
+            const student_user_id: any = await this.authService.decryptGlobal(req.params.student_user_id);
             const serviceStudent = new StudentService()
             let studentBadgesObj: any = await serviceStudent.getStudentBadges(student_user_id);
             ///do not do empty or null check since badges obj can be null if no badges earned yet hence this is not an error condition 
@@ -659,12 +702,12 @@ export default class StudentController extends BaseController {
                 studentBadgesObj = {};
             }
             const studentBadgesObjKeysArr = Object.keys(studentBadgesObj)
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const paramStatus: any = newREQQuery.status;
             const where: any = {};
@@ -708,8 +751,8 @@ export default class StudentController extends BaseController {
         }
     }
     private async studentPasswordUpdate(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             let count: any = 0;
@@ -732,15 +775,15 @@ export default class StudentController extends BaseController {
         }
     }
     private async studentCertificate(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            let newREParams : any = {};
-            if(req.params){
-                const newParams : any = await this.authService.decryptGlobal(req.params);
+            let newREParams: any = {};
+            if (req.params) {
+                const newParams: any = await this.authService.decryptGlobal(req.params);
                 newREParams = JSON.parse(newParams);
-            }else {
+            } else {
                 newREParams = req.params
             }
             const { model, student_user_id } = newREParams;
@@ -768,11 +811,11 @@ export default class StudentController extends BaseController {
         }
     }
     private async stuIdeaSubmissionEmail(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            const { mentor_id,team_id,team_name,title} = req.body;
+            const { mentor_id, team_id, team_name, title } = req.body;
             let data: any = {}
             const contentText = `
             <body style="border: solid;margin-right: 15%;margin-left: 15%; ">
@@ -812,27 +855,27 @@ export default class StudentController extends BaseController {
                 WHERE
                     s.team_id = ${team_id}
             ) AS combined_usernames;`, { type: QueryTypes.SELECT });
-           data= summary;
+            data = summary;
             const usernameArray = data[0].all_usernames;
             let arrayOfUsernames = usernameArray.split(', ');
-            const result = await this.authService.triggerBulkEmail(arrayOfUsernames,contentText,subject);
-            
+            const result = await this.authService.triggerBulkEmail(arrayOfUsernames, contentText, subject);
+
             return res.status(200).send(dispatcher(res, result, 'Email sent'));
         } catch (error) {
             next(error);
         }
     }
 }
-        // private async updatePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        //     const result = await this.authService.updatePassword(req.body, res);
-        //     if (!result) {
-        //         return res.status(404).send(dispatcher(res,null, 'error', speeches.USER_NOT_FOUND));
-        //     } else if (result.error) {
-        //         return res.status(404).send(dispatcher(res,result.error, 'error', result.error));
-        //     }
-        //     else if (result.match) {
-        //         return res.status(404).send(dispatcher(res,null, 'error', speeches.USER_PASSWORD));
-        //     } else {
-        //         return res.status(202).send(dispatcher(res,result.data, 'accepted', speeches.USER_PASSWORD_CHANGE, 202));
-        //     }
-        // }
+// private async updatePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+//     const result = await this.authService.updatePassword(req.body, res);
+//     if (!result) {
+//         return res.status(404).send(dispatcher(res,null, 'error', speeches.USER_NOT_FOUND));
+//     } else if (result.error) {
+//         return res.status(404).send(dispatcher(res,result.error, 'error', result.error));
+//     }
+//     else if (result.match) {
+//         return res.status(404).send(dispatcher(res,null, 'error', speeches.USER_PASSWORD));
+//     } else {
+//         return res.status(202).send(dispatcher(res,result.data, 'accepted', speeches.USER_PASSWORD_CHANGE, 202));
+//     }
+// }
