@@ -3,7 +3,7 @@ name: Deployment
 
 on:
   push:
-    branches: [development, testing]
+    branches: master
 
 jobs:
   #First we will see the application build or not , then we will deploy in EC2
@@ -26,14 +26,16 @@ jobs:
 
     steps:
       - name: Deploy to Development
-        if: github.ref == 'refs/heads/development'
+        if: github.ref == 'refs/heads/master'
         env:
           PRIVATE_KEY: ${{ secrets.NT_PRIVATE_KEY }}
           HOSTNAME: ${{ secrets.NT_DEV_HOSTNAME }}
+          UNAME: ${{ secrets.UNAME }}
+          PWD: ${{ secrets.PWD }}
         run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 400 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${{secrets.NT_DEV_HOSTNAME}} '
-            cd /home/ubuntu/aim_be &&
+          sshpass "${{ secrets.PWD }}" sdcusr@${{secrets.UNAME}} '
+      
+            cd var/www/html/aim_be &&
             git checkout development &&
             git pull origin development &&
             npm i -f && NODE_OPTIONS="--max-old-space-size=1024" npm run build && npm run start:prod && pm2 save -f'
