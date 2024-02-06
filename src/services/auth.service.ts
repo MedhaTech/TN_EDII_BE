@@ -44,7 +44,7 @@ export default class authService {
      */
     async checkOrgDetails(institution_code: any) {
         try {
-            const org = await this.crudService.findOne(institutions, {
+            const org = await this.crudService.findAll(institutions, {
                 where: {
                     institution_code: institution_code,
                     status: {
