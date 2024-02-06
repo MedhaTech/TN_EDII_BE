@@ -35,7 +35,7 @@ jobs:
           UNAME: ${{ secrets.UNAME }}
           PWD: ${{ secrets.PWD }}
         run: |
-          sshpass "${{ secrets.PWD }}"  ssh -o StrictHostKeyChecking=no sdcusr@${{secrets.UNAME}} '
+          /usr/bin/sshpass "${{ secrets.PWD }}"  ssh -o StrictHostKeyChecking=no sdcusr@${{secrets.UNAME}} '
       
             cd var/www/html/aim_be &&
             git checkout development &&
