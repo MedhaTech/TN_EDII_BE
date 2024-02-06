@@ -9,6 +9,13 @@ import validationMiddleware from "../middlewares/validation.middleware";
 import { Op } from "sequelize";
 import { constents } from "../configs/constents.config";
 import { institutionsCheckSchema, institutionsRawSchema, institutionsSchema, institutionsUpdateSchema } from "../validations/institutions.validations";
+import { places } from "../models/places.model";
+import { blocks } from "../models/blocks.model";
+import { taluks } from "../models/taluks.model";
+import { districts } from "../models/districts.model";
+import { states } from "../models/states.model";
+import { institution_types } from "../models/institution_types.model";
+import { institution_principals } from "../models/institution_principals.model";
 
 export default class institutionsController extends BaseController {
 
@@ -27,18 +34,18 @@ export default class institutionsController extends BaseController {
         super.initializeRoutes();
     };
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
-        } 
+        if (res.locals.role !== 'ADMIN') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
         try {
             let data: any;
             const { model, id } = req.params;
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const paramStatus: any = newREQQuery.status;
             if (model) {
@@ -46,7 +53,6 @@ export default class institutionsController extends BaseController {
             };
             // pagination
             const { page, size, status } = newREQQuery;
-            // let condition = status ? { status: { [Op.like]: `%${status}%` } } : null;
             const { limit, offset } = this.getPagination(page, size);
             const modelClass = await this.loadModel(model).catch(error => {
                 next(error)
@@ -85,6 +91,78 @@ export default class institutionsController extends BaseController {
             } else {
                 try {
                     const responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
+                        attributes: [
+                            "institution_id",
+                            "institution_code",
+                            "institution_name",
+                            "institution_name_vernacular"
+                        ],
+                        include: [
+                            {
+                                model: places,
+                                attributes: [
+                                    'place_id',
+                                    'place_type',
+                                    'place_name',
+                                    'place_name_vernacular'
+                                ],
+                                include: {
+                                    model: blocks,
+                                    attributes: [
+                                        'block_id',
+                                        'block_name',
+                                        'block_name_vernacular'
+                                    ],
+                                    include: {
+                                        model: taluks,
+                                        attributes: [
+                                            'taluk_id',
+                                            'taluk_name',
+                                            'taluk_name_vernacular'
+                                        ],
+                                        include: {
+                                            model: districts,
+                                            attributes: [
+                                                'district_id',
+                                                'district_name',
+                                                'district_name_vernacular',
+                                                'district_headquarters',
+                                                'district_headquarters_vernacular'
+                                            ],
+                                            include: {
+                                                model: states,
+                                                attributes: [
+                                                    'state_id',
+                                                    'state_name',
+                                                    'state_name_vernacular'
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                model: institution_types,
+                                attributes: [
+                                    'institution_type_id',
+                                    'institution_type'
+                                ]
+                            },
+                            {
+                                model: institution_principals,
+                                attributes: [
+                                    'institution_principal_id',
+                                    'principal_name',
+                                    'principal_name_vernacular',
+                                    'principal_email',
+                                    'principal_mobile',
+                                    'ed_cell_coordinator_name',
+                                    'ed_cell_coordinator_name_vernacular',
+                                    'ed_cell_coordinator_email',
+                                    'ed_cell_coordinator_mobile'
+                                ]
+                            }
+                        ],
                         where: {
                             [Op.and]: [
                                 whereClauseStatusPart
@@ -95,27 +173,15 @@ export default class institutionsController extends BaseController {
                     const result = this.getPagingData(responseOfFindAndCountAll, page, limit);
                     data = result;
                 } catch (error: any) {
-                    console.log(error)
-                    //  res.status(500).send(dispatcher(res,data, 'error'))
                     next(error)
                 }
             }
-            // if (!data) {
-            //     return res.status(404).send(dispatcher(res,data, 'error'));
-            // }
             if (!data || data instanceof Error) {
                 if (data != null) {
                     throw notFound(data.message)
                 } else {
                     throw notFound()
                 }
-                res.status(200).send(dispatcher(res, null, "error", speeches.DATA_NOT_FOUND));
-                // if(data!=null){
-                //     throw 
-                (data.message)
-                // }else{
-                //     throw notFound()
-                // }
             }
             return res.status(200).send(dispatcher(res, data, 'success'));
         } catch (error) {
@@ -132,7 +198,7 @@ export default class institutionsController extends BaseController {
         }
     }
     private async createOrg(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-     return this.createData(req, res, next);
+        return this.createData(req, res, next);
     }
-    
+
 }
