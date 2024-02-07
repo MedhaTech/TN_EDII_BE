@@ -44,7 +44,7 @@ export const studentResetPasswordSchema = Joi.object().keys({
 
 export const studentUpdateSchema = Joi.object().keys({
     status: Joi.string().valid(...Object.values(constents.common_status_flags.list)),
-    course_id:Joi.number(),
+    stream_id:Joi.number(),
     year_of_study:Joi.number(),
     team_id:Joi.number().messages({
         'string.empty': speeches.USER_TEAMID_REQUIRED
@@ -59,7 +59,7 @@ export const studentUpdateSchema = Joi.object().keys({
 });
 export const studentRegSchema = Joi.object().keys({
     status: Joi.string().valid(...Object.values(constents.common_status_flags.list)),
-    course_id:Joi.number(),
+    stream_id:Joi.number(),
     year_of_study:Joi.number(),
     team_id:Joi.number().messages({
         'string.empty': speeches.USER_TEAMID_REQUIRED
