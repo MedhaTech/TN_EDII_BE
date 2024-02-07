@@ -31,6 +31,7 @@ import { taluks } from '../models/taluks.model';
 import { districts } from '../models/districts.model';
 import { states } from '../models/states.model';
 import { institution_types } from '../models/institution_types.model';
+import { streams } from '../models/streams.model';
 
 export default class StudentController extends BaseController {
     model = "student";
@@ -126,85 +127,95 @@ export default class StudentController extends BaseController {
                             where,
                         ],
                     },
-                    include: {
-                        model: team,
-                        attributes: [
-                            'team_id',
-                            'team_name',
-                            'mentor_id'
-                        ],
-                        include: {
-                            model: mentor,
+                    include: [
+                        {
+                            model: team,
                             attributes: [
-                                'mentor_name',
-                                'gender',
-                                'mentor_mobile'
+                                'team_id',
+                                'team_name',
+                                'mentor_id'
                             ],
-                            include:
-                            {
-                                model: institutions,
+                            include: {
+                                model: mentor,
                                 attributes: [
-                                    "institution_id",
-                                    "institution_code",
-                                    "institution_name",
-                                    "institution_name_vernacular"
+                                    'mentor_name',
+                                    'gender',
+                                    'mentor_mobile'
                                 ],
-                                include: [
-                                    {
-                                        model: places,
-                                        attributes: [
-                                            'place_id',
-                                            'place_type',
-                                            'place_name',
-                                            'place_name_vernacular'
-                                        ],
-                                        include: {
-                                            model: blocks,
+                                include:
+                                {
+                                    model: institutions,
+                                    attributes: [
+                                        "institution_id",
+                                        "institution_code",
+                                        "institution_name",
+                                        "institution_name_vernacular"
+                                    ],
+                                    include: [
+                                        {
+                                            model: places,
                                             attributes: [
-                                                'block_id',
-                                                'block_name',
-                                                'block_name_vernacular'
+                                                'place_id',
+                                                'place_type',
+                                                'place_name',
+                                                'place_name_vernacular'
                                             ],
                                             include: {
-                                                model: taluks,
+                                                model: blocks,
                                                 attributes: [
-                                                    'taluk_id',
-                                                    'taluk_name',
-                                                    'taluk_name_vernacular'
+                                                    'block_id',
+                                                    'block_name',
+                                                    'block_name_vernacular'
                                                 ],
                                                 include: {
-                                                    model: districts,
+                                                    model: taluks,
                                                     attributes: [
-                                                        'district_id',
-                                                        'district_name',
-                                                        'district_name_vernacular',
-                                                        'district_headquarters',
-                                                        'district_headquarters_vernacular'
+                                                        'taluk_id',
+                                                        'taluk_name',
+                                                        'taluk_name_vernacular'
                                                     ],
                                                     include: {
-                                                        model: states,
+                                                        model: districts,
                                                         attributes: [
-                                                            'state_id',
-                                                            'state_name',
-                                                            'state_name_vernacular'
-                                                        ]
+                                                            'district_id',
+                                                            'district_name',
+                                                            'district_name_vernacular',
+                                                            'district_headquarters',
+                                                            'district_headquarters_vernacular'
+                                                        ],
+                                                        include: {
+                                                            model: states,
+                                                            attributes: [
+                                                                'state_id',
+                                                                'state_name',
+                                                                'state_name_vernacular'
+                                                            ]
+                                                        }
                                                     }
                                                 }
                                             }
+                                        },
+                                        {
+                                            model: institution_types,
+                                            attributes: [
+                                                'institution_type_id',
+                                                'institution_type'
+                                            ]
                                         }
-                                    },
-                                    {
-                                        model: institution_types,
-                                        attributes: [
-                                            'institution_type_id',
-                                            'institution_type'
-                                        ]
-                                    }
-                                ]
-                            }
+                                    ]
+                                }
 
+                            },
                         },
-                    },
+                        {
+                            model: streams,
+                            attributes: [
+                                "stream_id",
+                                "stream_name",
+                                "stream_short_form"
+                            ]
+                        }
+                    ],
                 });
             } else {
                 try {

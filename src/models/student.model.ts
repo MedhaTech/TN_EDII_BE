@@ -5,6 +5,7 @@ import db from '../utils/dbconnection.util';
 import { notification } from './notification.model';
 import { baseConfig } from '../configs/base.config';
 import { user } from './user.model';
+import { streams } from './streams.model';
 
 export class student extends Model<InferAttributes<student>, InferCreationAttributes<student>> {
     declare student_id: CreationOptional<number>;
@@ -141,3 +142,5 @@ student.belongsTo(user, { foreignKey: 'user_id' });
 user.hasMany(student, { foreignKey: 'user_id' });
 student.belongsTo(user, { foreignKey: 'user_id' });
 user.hasMany(student, { foreignKey: 'user_id' });
+student.belongsTo(streams, {targetKey: 'stream_id',foreignKey: 'stream_id', constraints: false });
+streams.hasOne(student, { sourceKey: 'stream_id', foreignKey: 'stream_id', constraints: false });
