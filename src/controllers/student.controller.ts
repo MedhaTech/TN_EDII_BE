@@ -439,7 +439,14 @@ export default class StudentController extends BaseController {
     private async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             // const randomGeneratedSixDigitID = this.nanoid();
-            const { team_id, username } = req.body;
+            const { team_id, username, mentor_id } = req.body;
+            if (mentor_id) {
+                const countvalue = await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${mentor_id};`, { type: QueryTypes.SELECT });
+                const totalValue = Object.values(countvalue[0]).toString()
+                if (JSON.parse(totalValue) > 50) {
+                    throw badRequest(speeches.STUDENT_MAX)
+                }
+            }
             const cryptoEncryptedString = await this.authService.generateCryptEncryption(username);
             req.body['full_name'] = req.body.student_full_name;
             req.body['financial_year_id'] = 1;
@@ -474,6 +481,14 @@ export default class StudentController extends BaseController {
             for (let student in req.body) {
                 if (!req.body[student].team_id) throw notFound(speeches.USER_TEAMID_REQUIRED);
                 const team_id = req.body[student].team_id
+                const mentor_id = req.body[student].mentor_id
+                if (mentor_id) {
+                    const countvalue = await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${mentor_id};`, { type: QueryTypes.SELECT });
+                    const totalValue = Object.values(countvalue[0]).toString()
+                    if (JSON.parse(totalValue) > 47) {
+                        throw badRequest(speeches.STUDENT_MAX)
+                    }
+                }
                 if (team_id) {
                     const teamCanAddMember = await this.authService.checkIfTeamHasPlaceForNewMember(team_id)
                     if (!teamCanAddMember) {

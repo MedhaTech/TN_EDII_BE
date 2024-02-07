@@ -73,5 +73,6 @@ export const studentRegSchema = Joi.object().keys({
     username:Joi.string().trim().regex(constents.ONLY_DIGIT_PATTERN),
     role: Joi.string().required().regex(constents.ALPHA_NUMERIC_PATTERN).messages({
         'string.empty': speeches.USER_ROLE_REQUIRED
-    })
+    }),
+    mentor_id:Joi.number()
 });
