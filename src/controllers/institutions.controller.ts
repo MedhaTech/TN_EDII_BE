@@ -16,6 +16,7 @@ import { districts } from "../models/districts.model";
 import { states } from "../models/states.model";
 import { institution_types } from "../models/institution_types.model";
 import { institution_principals } from "../models/institution_principals.model";
+import { streams } from "../models/streams.model";
 
 export default class institutionsController extends BaseController {
 
@@ -31,6 +32,8 @@ export default class institutionsController extends BaseController {
     protected initializeRoutes(): void {
         this.router.post(`${this.path}/checkOrg`, validationMiddleware(institutionsCheckSchema), this.checkOrgDetails.bind(this));
         this.router.post(`${this.path}/createOrg`, validationMiddleware(institutionsRawSchema), this.createOrg.bind(this));
+        this.router.get(`${this.path}/Streams/:institution_type_id`,  this.getStreams.bind(this));
+        
         super.initializeRoutes();
     };
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
@@ -200,5 +203,53 @@ export default class institutionsController extends BaseController {
     private async createOrg(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         return this.createData(req, res, next);
     }
-
+    private async getStreams(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            let response: any = [];
+            const deValue: any = await this.authService.decryptGlobal(req.params.institution_type_id);
+            const findUniversity = await this.crudService.findOne(institution_types,{
+                where : {institution_type_id:deValue}
+            })
+            let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
+            let result : any ={};
+            const where: any = {};
+            if(!findUniversity.dataValues.institution_type.includes("University")){
+                where[`institution_type_id`] = JSON.parse(deValue);
+                result = await this.crudService.findAll(streams, {
+                    attributes: [
+                        'stream_name',
+                        "stream_id"
+                    ],
+                    where: {
+                        [Op.and]: [
+                            objWhereClauseStatusPart.whereClauseStatusPart,
+                            where
+                        ]
+                    },
+                    group: ['stream_name'],
+                    order:['stream_id']
+                });
+            }else{
+                result = await this.crudService.findAll(streams, {
+                    attributes: [
+                        'stream_name',
+                        'stream_id'
+                    ],
+                    where: {
+                        [Op.and]: [
+                            objWhereClauseStatusPart.whereClauseStatusPart
+                        ]
+                    },
+                    group: ['stream_name'],
+                    order:['stream_id']
+                });
+            }
+            result.forEach((obj: any) => {
+                response.push({stream_name:obj.dataValues.stream_name,stream_id:obj.dataValues.stream_id})
+            });
+            return res.status(200).send(dispatcher(res, response, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
 }

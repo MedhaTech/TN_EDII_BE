@@ -17,6 +17,7 @@ import { constant } from "lodash";
 import { constents } from "../configs/constents.config";
 import db from "../utils/dbconnection.util";
 import { organization } from "../models/organization.model";
+import { districts } from "../models/districts.model";
 
 export default class OrganizationController extends BaseController {
 
@@ -224,22 +225,22 @@ export default class OrganizationController extends BaseController {
                 });
 
             }else{
-                result = await this.crudService.findAll(modelClass, {
+                result = await this.crudService.findAll(districts, {
                     attributes: [
-                        'district'
+                        'district_name'
                     ],
                     where: {
                         [Op.and]: [
                             objWhereClauseStatusPart.whereClauseStatusPart
                         ]
                     },
-                    group: ['district']
+                    group: ['district_name']
                 });
                 response.push('All Districts');
             }
             
             result.forEach((obj: any) => {
-                response.push(obj.dataValues.district)
+                response.push(obj.dataValues.district_name)
             });
             return res.status(200).send(dispatcher(res, response, 'success'));
         } catch (error) {

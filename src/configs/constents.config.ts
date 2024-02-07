@@ -82,21 +82,6 @@ export const constents = {
       'RURAL': 'RURAL'
     }
   },
-  institution_type_flages:{
-    list : { 
-      'Anna University Engineering college':'Anna University Engineering college',
-      'Autonomous Engineering colleges':'Autonomous Engineering colleges',
-      'Deemed University':'Deemed University',
-      'Affiliated Engineering College':'Affiliated Engineering College',
-      'Arts & Science College (Regular)':'Arts & Science College (Regular)',
-      'Arts & Science (Deemed university)':'Arts & Science (Deemed university)',
-      'Polytechnic College':'Polytechnic College',
-      'ITI College':'ITI College',
-      'Veterinary College':'Veterinary College',
-      'Fisheries College':'Fisheries College',
-      'Agri College':'Agri College'
-    }
-  },
   course_catrgory_flages:{
     list:{
       'UG':'UG',
