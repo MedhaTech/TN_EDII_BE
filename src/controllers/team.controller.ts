@@ -300,7 +300,15 @@ export default class TeamController extends BaseController {
         if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
-        try {
+        try { 
+            const mentor_id = req.body.mentor_id
+            if (mentor_id) {
+                const countvalue = await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${mentor_id};`, { type: QueryTypes.SELECT });
+                const totalValue = Object.values(countvalue[0]).toString()
+                if (JSON.parse(totalValue) > 47) {
+                    throw badRequest(speeches.STUDENT_MAX)
+                }
+            }
             const { model } = req.params;
             if (model) {
                 this.model = model;
