@@ -8,7 +8,7 @@ import { user } from './user.model';
 
 export class student extends Model<InferAttributes<student>, InferCreationAttributes<student>> {
     declare student_id: CreationOptional<number>;
-    declare course_id: number;
+    declare stream_id: number;
     declare year_of_study: number;
     declare financial_year_id: number;
     declare user_id: number;
@@ -43,7 +43,7 @@ student.init(
             autoIncrement: true,
             primaryKey: true,
         },
-        course_id: {
+        stream_id: {
             type: DataTypes.INTEGER
         },
         year_of_study: {

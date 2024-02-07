@@ -1,13 +1,13 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { institutions } from './institutions.model';
-import { streams } from './streams.model';
 
 
-export class institution_types extends Model<InferAttributes<institution_types>, InferCreationAttributes<institution_types>> {
-    declare institution_type_id: CreationOptional<number>;
-    declare institution_type: String;
+export class streams extends Model<InferAttributes<streams>, InferCreationAttributes<streams>> {
+    declare stream_id: CreationOptional<number>;
+    declare institution_type_id: number;
+    declare stream_name: string;
+    declare stream_short_form: string;
     declare status: Enumerator;
     declare created_by: number;
     declare created_at: Date;
@@ -16,14 +16,22 @@ export class institution_types extends Model<InferAttributes<institution_types>,
     
 }
 
-institution_types.init({
-    institution_type_id: {
+streams.init({
+    stream_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
-    institution_type: {
-        type: DataTypes.STRING
+    institution_type_id: {
+        type: DataTypes.INTEGER
+    },
+    stream_name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    stream_short_form: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
     status: {
         type: DataTypes.ENUM(...Object.values(constents.institutions_status_flags.list)),
@@ -53,14 +61,9 @@ institution_types.init({
 },
     {
         sequelize: db,
-        tableName: 'institution_types',
+        tableName: 'streams',
         timestamps: true,
         updatedAt: 'updated_at',
         createdAt: 'created_at',
     }
-
 );
-institution_types.belongsTo(institutions, {targetKey: 'institution_type_id',foreignKey: 'institution_type_id', constraints: false });
-institutions.hasOne(institution_types, { sourceKey: 'institution_type_id', foreignKey: 'institution_type_id', constraints: false });
-institution_types.belongsTo(streams, {targetKey: 'institution_type_id',foreignKey: 'institution_type_id', constraints: false });
-streams.hasOne(institution_types, { sourceKey: 'institution_type_id', foreignKey: 'institution_type_id', constraints: false });

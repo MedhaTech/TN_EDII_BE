@@ -211,10 +211,14 @@ export default class MentorController extends BaseController {
             // if (current_user !== getUserIdFromMentorId.getDataValue("user_id")) {
             //     throw forbidden();
             // };
-            let state: any = newREQQuery.state;
-            let whereClauseOfState: any = state && state !== 'All States' ?
-                { state: { [Op.like]: newREQQuery.state } } :
-                { state: { [Op.like]: `%%` } }
+            // let state: any = newREQQuery.state;
+            // let whereClauseOfState: any = state && state !== 'All States' ?
+            //     { state: { [Op.like]: newREQQuery.state } } :
+            //     { state: { [Op.like]: `%%` } }
+            let district_name: any = newREQQuery.district_name;
+            let whereClauseOfState: any = district_name && district_name !== 'All Districts' ?
+                { '$institutions.places.blocks.taluks.districts.district_name$': { [Op.like]: newREQQuery.district_name } } :
+                { '$institutions.places.blocks.taluks.districts.district_name$': { [Op.like]: `%%` } }
             if (id) {
                 const deValue: any = await this.authService.decryptGlobal(req.params.id);
                 where[`${this.model}_id`] = JSON.parse(deValue);
@@ -322,6 +326,7 @@ export default class MentorController extends BaseController {
                         where: {
                             [Op.and]: [
                                 whereClauseStatusPart,
+                                //whereClauseOfState
                                 // condition
                             ]
                         },
@@ -365,9 +370,9 @@ export default class MentorController extends BaseController {
                                                     'district_name_vernacular',
                                                     'district_headquarters',
                                                     'district_headquarters_vernacular'
-                                                ], 
-                                                // where: whereClauseOfState,
-                                                // require: false,
+                                                ], where: {
+                                                    district_name: district_name
+                                                },
                                                 include: {
                                                     model: states,
                                                     attributes: [
@@ -514,8 +519,7 @@ export default class MentorController extends BaseController {
                 const mentorData = await this.authService.crudService.findOne(mentor, {
                     where: { user_id: result.data.user_id },
                     include: {
-                        model: institutions,
-
+                        model: institutions
                     }
                 });
                 if (!mentorData || mentorData instanceof Error) {
@@ -527,6 +531,7 @@ export default class MentorController extends BaseController {
                 result.data['mentor_id'] = mentorData.dataValues.mentor_id;
                 result.data['institution_name'] = mentorData.dataValues.institution.dataValues.institution_name;
                 result.data['mentor_title'] = mentorData.dataValues.mentor_title;
+                result.data['institution_type_id'] = mentorData.dataValues.institution.dataValues.institution_type_id;
                 return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
             }
         } catch (error) {
