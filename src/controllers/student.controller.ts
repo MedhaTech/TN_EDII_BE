@@ -119,7 +119,8 @@ export default class StudentController extends BaseController {
                         'mobile',
                         'email',
                         'Gender',
-                        'Age'
+                        'Age',
+                        'year_of_study'
                     ],
                     where: {
                         [Op.and]: [
@@ -226,7 +227,8 @@ export default class StudentController extends BaseController {
                             'mobile',
                             'email',
                             'Gender',
-                            'Age'
+                            'Age',
+                            'year_of_study'
                         ],
                         where: {
                             [Op.and]: [
