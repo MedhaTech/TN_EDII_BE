@@ -209,6 +209,13 @@ export const constents = {
     },
     default: "DRAFT"
   },
+  common_on_off_flags: {
+    list: {
+      "0": "0",
+      "1": "1"
+    },
+    default: null
+  },
   final_result_flags: {
     list: {
       "0": "0",
