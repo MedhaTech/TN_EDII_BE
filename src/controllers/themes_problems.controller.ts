@@ -22,7 +22,7 @@ export default class themes_problemsController extends BaseController {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            let response : any 
+            let response: any = [];
             const result = await this.crudService.findAll(themes_problems, {
                 attributes: [
                     'theme_name'
@@ -54,7 +54,7 @@ export default class themes_problemsController extends BaseController {
                 return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
             }
             const theme_name = newREQQuery.theme_name;
-            let response : any 
+            let response: any = [];
             const result = await this.crudService.findAll(themes_problems, {
                 attributes: [
                     'problem_statement',
