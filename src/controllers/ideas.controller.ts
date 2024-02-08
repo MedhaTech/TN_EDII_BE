@@ -16,11 +16,12 @@ export default class ideasController extends BaseController {
         this.path = '/ideas';
     }
     protected initializeRoutes(): void {
-        this.router.post(this.path + "/test", this.initiateIdea.bind(this));
+        this.router.post(this.path + "/test", this.initiateIdeaop.bind(this));
+        this.router.post(this.path + "/initiate", this.initiateIdea.bind(this));
         this.router.get(this.path + '/submittedDetails', this.getResponse.bind(this));
         super.initializeRoutes();
     }
-    protected async initiateIdea(req: Request, res: Response, next: NextFunction) {
+    protected async initiateIdeaop(req: Request, res: Response, next: NextFunction) {
         // if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' ){
         //     return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
         // }
@@ -32,7 +33,7 @@ export default class ideasController extends BaseController {
             next(err)
         }
     }
-    protected async createData(req: Request, res: Response, next: NextFunction) {
+    protected async initiateIdea(req: Request, res: Response, next: NextFunction) {
         if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
@@ -43,11 +44,46 @@ export default class ideasController extends BaseController {
             }
             req.body['financial_year_id'] = 1;
             let result: any = await this.crudService.create(ideas, req.body);
+            if (!result) {
+                throw badRequest(speeches.INVALID_DATA);
+            }
+            if (result instanceof Error) {
+                throw result;
+            }
             res.status(200).send(dispatcher(res, result))
         } catch (err) {
             next(err)
         }
     }
+    // protected async createData(req: Request, res: Response, next: NextFunction) {
+    //     if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT') {
+    //         return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+    //     }
+    //     try {
+    //         const { team_id,initiated_by, district} = req.body;
+    //         if (!team_id) {
+    //             throw unauthorized(speeches.USER_TEAMID_REQUIRED)
+    //         }
+    //         req.body['financial_year_id'] = 1;
+    //         const playloadData = {
+    //             financial_year_id : 1,
+    //             team_id:team_id,
+    //             initiated_by:initiated_by,
+    //             district:district
+    //         }
+    //         let result: any = await this.crudService.create(ideas, playloadData);
+    //         console.log(result,"ff");
+    //         if (!result) {
+    //             throw badRequest(speeches.INVALID_DATA);
+    //         }
+    //         if (result instanceof Error) {
+    //             throw result;
+    //         }
+    //         res.status(200).send(dispatcher(res, result))
+    //     } catch (err) {
+    //         next(err)
+    //     }
+    // }
     protected async updateData(req: Request, res: Response, next: NextFunction) {
         if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
