@@ -96,8 +96,7 @@ export default class ideasController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            //let { team_id } = newREQQuery;
-            const team_id = 18;
+            let { team_id } = newREQQuery;
             if (!team_id) {
                 throw unauthorized(speeches.USER_TEAMID_REQUIRED)
             }
