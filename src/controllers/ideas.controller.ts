@@ -18,6 +18,7 @@ export default class ideasController extends BaseController {
     protected initializeRoutes(): void {
         this.router.post(this.path + "/test", this.initiateIdeaop.bind(this));
         this.router.post(this.path + "/initiate", this.initiateIdea.bind(this));
+        this.router.put(this.path + "/ideaUpdate", this.UpdateIdea.bind(this));
         this.router.get(this.path + '/submittedDetails', this.getResponse.bind(this));
         super.initializeRoutes();
     }
@@ -55,36 +56,7 @@ export default class ideasController extends BaseController {
             next(err)
         }
     }
-    // protected async createData(req: Request, res: Response, next: NextFunction) {
-    //     if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT') {
-    //         return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
-    //     }
-    //     try {
-    //         const { team_id,initiated_by, district} = req.body;
-    //         if (!team_id) {
-    //             throw unauthorized(speeches.USER_TEAMID_REQUIRED)
-    //         }
-    //         req.body['financial_year_id'] = 1;
-    //         const playloadData = {
-    //             financial_year_id : 1,
-    //             team_id:team_id,
-    //             initiated_by:initiated_by,
-    //             district:district
-    //         }
-    //         let result: any = await this.crudService.create(ideas, playloadData);
-    //         console.log(result,"ff");
-    //         if (!result) {
-    //             throw badRequest(speeches.INVALID_DATA);
-    //         }
-    //         if (result instanceof Error) {
-    //             throw result;
-    //         }
-    //         res.status(200).send(dispatcher(res, result))
-    //     } catch (err) {
-    //         next(err)
-    //     }
-    // }
-    protected async updateData(req: Request, res: Response, next: NextFunction) {
+    protected async UpdateIdea(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
@@ -99,7 +71,6 @@ export default class ideasController extends BaseController {
             } else {
                 req.body['theme_problem_id'] = problem_statement_id;
             }
-
             req.body['financial_year_id'] = 1;
             if (status === 'DRAFT') {
                 req.body['submitted_at'] = null;
@@ -108,14 +79,11 @@ export default class ideasController extends BaseController {
                 let newFormat = (newDate.getFullYear()) + "-" + (1 + newDate.getMonth()) + "-" + newDate.getUTCDate() + ' ' + newDate.getHours() + ':' + newDate.getMinutes() + ':' + newDate.getSeconds();
                 req.body['submitted_at'] = newFormat;
             }
-            const attachmentsCopyResult = await this.copyAllFiles(req, null, "ideas", "test");
-            req.body['Prototype_file'] = attachmentsCopyResult?.attachments;
             const where: any = {};
-            const newParamId = await this.authService.decryptGlobal(req.params.id);
-            where[`ideas_id`] = newParamId;
+            const valuebody = req.body; 
             where[`team_id`] = team_id;
-            let result: any = await this.crudService.update(ideas, req.body, { where: where });
-            res.status(200).send(dispatcher(res, result))
+            let result: any = await this.crudService.update(ideas, valuebody, { where: where });
+            return res.status(200).send(dispatcher(res, result, 'updated'));
         } catch (err) {
             next(err)
         }

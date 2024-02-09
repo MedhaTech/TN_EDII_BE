@@ -9,7 +9,7 @@ export class places extends Model<InferAttributes<places>, InferCreationAttribut
     declare place_type: Enumerator;
     declare place_name: string;
     declare place_name_vernacular: string;
-    declare block_id : number;
+    declare taluk_id : number;
     declare status: Enumerator;
     declare created_by: number;
     declare created_at: Date;
@@ -34,7 +34,7 @@ places.init({
     place_name_vernacular: {
         type: DataTypes.STRING
     },
-    block_id: {
+    taluk_id: {
         type: DataTypes.INTEGER
     },
     status: {

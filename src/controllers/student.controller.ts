@@ -162,18 +162,19 @@ export default class StudentController extends BaseController {
                                                 'place_name_vernacular'
                                             ],
                                             include: {
-                                                model: blocks,
+                                                model: taluks,
                                                 attributes: [
-                                                    'block_id',
-                                                    'block_name',
-                                                    'block_name_vernacular'
+                                                    'taluk_id',
+                                                    'taluk_name',
+                                                    'taluk_name_vernacular'
+
                                                 ],
                                                 include: {
-                                                    model: taluks,
+                                                    model: blocks,
                                                     attributes: [
-                                                        'taluk_id',
-                                                        'taluk_name',
-                                                        'taluk_name_vernacular'
+                                                        'block_id',
+                                                        'block_name',
+                                                        'block_name_vernacular'
                                                     ],
                                                     include: {
                                                         model: districts,
@@ -263,18 +264,19 @@ export default class StudentController extends BaseController {
                                             'place_name_vernacular'
                                         ],
                                         include: {
-                                            model: blocks,
+                                            model: taluks,
                                             attributes: [
-                                                'block_id',
-                                                'block_name',
-                                                'block_name_vernacular'
+                                                'taluk_id',
+                                                'taluk_name',
+                                                'taluk_name_vernacular'
+
                                             ],
                                             include: {
-                                                model: taluks,
+                                                model: blocks,
                                                 attributes: [
-                                                    'taluk_id',
-                                                    'taluk_name',
-                                                    'taluk_name_vernacular'
+                                                    'block_id',
+                                                    'block_name',
+                                                    'block_name_vernacular'
                                                 ],
                                                 include: {
                                                     model: districts,
@@ -556,21 +558,22 @@ export default class StudentController extends BaseController {
             if (mentorData.dataValues.reg_status !== '3') {
                 return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_REG_STATUS));
             }
-        //     const valueDis = await db.query(`SELECT 
-        //     district_name
-        // FROM
-        //     districts AS d
-        //         JOIN
-        //     taluks AS t ON d.district_id = t.district_id
-        //         JOIN
-        //     blocks AS b ON t.taluk_id = b.taluk_id
-        //         JOIN
-        //     places AS p ON b.block_id = p.block_id
-        //         JOIN
-        //     institutions AS ins ON p.place_id = ins.place_id where institution_id = ${mentorData.dataValues.institution.dataValues.institution_id};`, { type: QueryTypes.SELECT });
+            const valueDis = await db.query(`SELECT 
+                district_name
+            FROM
+                districts AS d
+                    JOIN
+                blocks AS b ON d.district_id = b.district_id
+                    JOIN
+                taluks AS t ON b.block_id = t.block_id
+                    JOIN
+                places AS p ON t.taluk_id = p.taluk_id
+                    JOIN
+                institutions AS ins ON p.place_id = ins.place_id
+            WHERE
+                institution_id = ${mentorData.dataValues.institution.dataValues.institution_id};`, { type: QueryTypes.SELECT });
             result.data['institution_name'] = mentorData.dataValues.institution.dataValues.institution_name;
-            //result.data['district'] = Object.values(valueDis[0]).toString()
-            result.data['district'] = 'Coimbatore'
+            result.data['district'] = Object.values(valueDis[0]).toString()
             // result.data['state'] = mentorData.dataValues.organization.state;
             return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
         }

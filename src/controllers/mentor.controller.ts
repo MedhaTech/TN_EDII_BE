@@ -262,18 +262,19 @@ export default class MentorController extends BaseController {
                                     'place_name_vernacular'
                                 ],
                                 include: {
-                                    model: blocks,
+                                    model: taluks,
                                     attributes: [
-                                        'block_id',
-                                        'block_name',
-                                        'block_name_vernacular'
+                                        'taluk_id',
+                                        'taluk_name',
+                                        'taluk_name_vernacular'
+
                                     ],
                                     include: {
-                                        model: taluks,
+                                        model: blocks,
                                         attributes: [
-                                            'taluk_id',
-                                            'taluk_name',
-                                            'taluk_name_vernacular'
+                                            'block_id',
+                                            'block_name',
+                                            'block_name_vernacular'
                                         ],
                                         include: {
                                             model: districts,
@@ -349,18 +350,19 @@ export default class MentorController extends BaseController {
                                         'place_name_vernacular'
                                     ],
                                     include: {
-                                        model: blocks,
+                                        model: taluks,
                                         attributes: [
-                                            'block_id',
-                                            'block_name',
-                                            'block_name_vernacular'
+                                            'taluk_id',
+                                            'taluk_name',
+                                            'taluk_name_vernacular'
+
                                         ],
                                         include: {
-                                            model: taluks,
+                                            model: blocks,
                                             attributes: [
-                                                'taluk_id',
-                                                'taluk_name',
-                                                'taluk_name_vernacular'
+                                                'block_id',
+                                                'block_name',
+                                                'block_name_vernacular'
                                             ],
                                             include: {
                                                 model: districts,

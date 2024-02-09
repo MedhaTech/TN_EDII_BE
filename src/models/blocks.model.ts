@@ -1,14 +1,14 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { places } from './places.model';
+import { taluks } from './taluks.model';
 
 
 export class blocks extends Model<InferAttributes<blocks>, InferCreationAttributes<blocks>> {
     declare block_id: CreationOptional<number>;
     declare block_name: string;
     declare block_name_vernacular: string;
-    declare taluk_id : number;
+    declare district_id : number;
     declare status: Enumerator;
     declare created_by: number;
     declare created_at: Date;
@@ -30,7 +30,7 @@ blocks.init({
     block_name_vernacular: {
         type: DataTypes.STRING
     },
-    taluk_id: {
+    district_id: {
         type: DataTypes.INTEGER
     },
     status: {
@@ -68,5 +68,5 @@ blocks.init({
     }
 
 );
-blocks.belongsTo(places, {targetKey: 'block_id',foreignKey: 'block_id', constraints: false });
-places.hasOne(blocks, { sourceKey: 'block_id', foreignKey: 'block_id', constraints: false });
+blocks.belongsTo(taluks, {targetKey: 'block_id',foreignKey: 'block_id', constraints: false });
+taluks.hasOne(blocks, { sourceKey: 'block_id', foreignKey: 'block_id', constraints: false });

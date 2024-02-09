@@ -13,7 +13,7 @@ import { admin } from "../models/admin.model";
 import { evaluator } from "../models/evaluator.model";
 import { mentor } from "../models/mentor.model";
 import { organization } from '../models/organization.model';
-import {state_coordinators} from '../models/state_coordinators.model';
+import { state_coordinators } from '../models/state_coordinators.model';
 import { student } from "../models/student.model";
 import { user } from "../models/user.model";
 import { team } from '../models/team.model';
@@ -36,7 +36,7 @@ import { institution_principals } from '../models/institution_principals.model';
 export default class authService {
     crudService: CRUDService = new CRUDService;
     private otp = '112233';
-    
+
     /**
      * find institution details using institution code and attach mentor details
      * @param institution_code String
@@ -51,7 +51,7 @@ export default class authService {
                         [Op.or]: ['ACTIVE', 'NEW']
                     }
                 },
-                attributes :[
+                attributes: [
                     "institution_id",
                     "institution_code",
                     "institution_name",
@@ -60,41 +60,42 @@ export default class authService {
                 include: [
                     {
                         model: places,
-                        attributes:[
+                        attributes: [
                             'place_id',
                             'place_type',
                             'place_name',
                             'place_name_vernacular'
                         ],
-                        include :{
-                            model:blocks,
-                            attributes:[
-                                'block_id',
-                                'block_name',
-                                'block_name_vernacular'
+                        include: {
+                            model: taluks,
+                            attributes: [
+                                'taluk_id',
+                                'taluk_name',
+                                'taluk_name_vernacular'
+
                             ],
-                            include :{
-                                model:taluks,
-                                attributes:[
-                                    'taluk_id',
-                                    'taluk_name',
-                                    'taluk_name_vernacular'
+                            include: {
+                                model: blocks,
+                                attributes: [
+                                    'block_id',
+                                    'block_name',
+                                    'block_name_vernacular'
                                 ],
-                                include :{
-                                    model:districts,
-                                    attributes:[
+                                include: {
+                                    model: districts,
+                                    attributes: [
                                         'district_id',
                                         'district_name',
                                         'district_name_vernacular',
                                         'district_headquarters',
                                         'district_headquarters_vernacular'
                                     ],
-                                    include :{
-                                        model:states,
-                                        attributes:[
+                                    include: {
+                                        model: states,
+                                        attributes: [
                                             'state_id',
                                             'state_name',
-                                            'state_name_vernacular'     
+                                            'state_name_vernacular'
                                         ]
                                     }
                                 }
@@ -103,15 +104,15 @@ export default class authService {
                     },
                     {
                         model: institution_types,
-                        attributes:[
-                           'institution_type_id',
+                        attributes: [
+                            'institution_type_id',
                             'institution_type'
                         ]
                     },
                     {
                         model: institution_principals,
-                        attributes:[
-                           'institution_principal_id',
+                        attributes: [
+                            'institution_principal_id',
                             'principal_name',
                             'principal_name_vernacular',
                             'principal_email',
@@ -123,23 +124,23 @@ export default class authService {
                         ]
                     },
                     {
-                    model: mentor,
-                    attributes: [
-                        "mentor_id",
-                        "financial_year_id",
-                        "user_id",
-                        "institution_id",
-                        "mentor_title",
-                        "mentor_name",
-                        "mentor_name_vernacular",
-                        "mentor_mobile",
-                        "mentor_whatapp_mobile",
-                        "mentor_email",
-                        "date_of_birth",
-                        "gender"
-                    ],
-                }   
-            ]
+                        model: mentor,
+                        attributes: [
+                            "mentor_id",
+                            "financial_year_id",
+                            "user_id",
+                            "institution_id",
+                            "mentor_title",
+                            "mentor_name",
+                            "mentor_name_vernacular",
+                            "mentor_mobile",
+                            "mentor_whatapp_mobile",
+                            "mentor_email",
+                            "date_of_birth",
+                            "gender"
+                        ],
+                    }
+                ]
             })
             return org;
         } catch (error) {
@@ -194,14 +195,14 @@ export default class authService {
                 // if (mentor_data) {
                 //     throw badRequest('Mobile')
                 // } else {
-                    let createUserAccount = await this.crudService.create(user, requestBody);
-                    let conditions = { ...requestBody, user_id: createUserAccount.dataValues.user_id };
-                    let createMentorAccount = await this.crudService.create(mentor, conditions);
-                    createMentorAccount.dataValues['username'] = createUserAccount.dataValues.username;
-                    createMentorAccount.dataValues['user_id'] = createUserAccount.dataValues.user_id;
-                    response = createMentorAccount;
-                    return response;
-                }
+                let createUserAccount = await this.crudService.create(user, requestBody);
+                let conditions = { ...requestBody, user_id: createUserAccount.dataValues.user_id };
+                let createMentorAccount = await this.crudService.create(mentor, conditions);
+                createMentorAccount.dataValues['username'] = createUserAccount.dataValues.username;
+                createMentorAccount.dataValues['user_id'] = createUserAccount.dataValues.user_id;
+                response = createMentorAccount;
+                return response;
+            }
             // }
         } catch (error) {
             return error;
@@ -373,7 +374,7 @@ export default class authService {
         let whereClause: any = {};
         try {
             if (requestBody.password === GlobalCryptoEncryptedString) {
-                whereClause = { "organization_code": requestBody.organization_code}
+                whereClause = { "organization_code": requestBody.organization_code }
             } else {
                 whereClause = {
                     "organization_code": requestBody.organization_code,
@@ -413,7 +414,7 @@ export default class authService {
                 const token = await jwtUtil.createToken(user_res.dataValues, `${process.env.PRIVATE_KEY}`);
 
                 result['data'] = {
-                    role:'SCHOOL',
+                    role: 'SCHOOL',
                     organization_id: user_res.dataValues.organization_id,
                     organization_name: user_res.dataValues.organization_name,
                     organization_code: user_res.dataValues.organization_code,
@@ -511,18 +512,18 @@ export default class authService {
             return result;
         }
     }
-     /**
-     *find the user and update the password field
-     * @param requestBody Objects
-     * @param responseBody Objects
-     * @returns Objects
-     */
-     async orgchangePassword(requestBody: any, responseBody: any) {
+    /**
+    *find the user and update the password field
+    * @param requestBody Objects
+    * @param responseBody Objects
+    * @returns Objects
+    */
+    async orgchangePassword(requestBody: any, responseBody: any) {
         let result: any = {};
         try {
             const user_res: any = await this.crudService.findOnePassword(organization, {
                 where: {
-                    organization_id : requestBody.organization_id
+                    organization_id: requestBody.organization_id
                 }
             });
             if (!user_res) {
@@ -560,7 +561,7 @@ export default class authService {
         let whereClause: any = {};
         try {
             if (requestBody.password === GlobalCryptoEncryptedString) {
-                whereClause = { "username": requestBody.username}
+                whereClause = { "username": requestBody.username }
             } else {
                 whereClause = {
                     "username": requestBody.username,
@@ -601,7 +602,7 @@ export default class authService {
 
                 result['data'] = {
                     id: user_res.dataValues.state_coordinators_id,
-                    role:user_res.dataValues.role,
+                    role: user_res.dataValues.role,
                     username: user_res.dataValues.username,
                     state_name: user_res.dataValues.state_name,
                     status: user_res.dataValues.status,
@@ -635,18 +636,18 @@ export default class authService {
             return result;
         }
     }
-     /**
-     *find the district user and update the password field
-     * @param requestBody Objects
-     * @param responseBody Objects
-     * @returns Objects
-     */
-     async statechangePassword(requestBody: any, responseBody: any) {
+    /**
+    *find the district user and update the password field
+    * @param requestBody Objects
+    * @param responseBody Objects
+    * @returns Objects
+    */
+    async statechangePassword(requestBody: any, responseBody: any) {
         let result: any = {};
         try {
             const user_res: any = await this.crudService.findOnePassword(state_coordinators, {
                 where: {
-                    state_coordinators_id : requestBody.id
+                    state_coordinators_id: requestBody.id
                 }
             });
             if (!user_res) {
@@ -679,20 +680,20 @@ export default class authService {
         // return Math.random().toFixed(6).substr(-6);
         return this.otp;
     }
-     /**
-     * Trigger OTP Message to specific mobile
-     * @param mobile Number
-     * @returns Number
-     */
-     async triggerOtpMsg(mobile: any,template_id:any) {
+    /**
+    * Trigger OTP Message to specific mobile
+    * @param mobile Number
+    * @returns Number
+    */
+    async triggerOtpMsg(mobile: any, template_id: any) {
         try {
             let otp
-            if(process.env.MOBILE_SMS_URl != ""){
+            if (process.env.MOBILE_SMS_URl != "") {
                 otp = await axios.get(`${process.env.MOBILE_SMS_URl}${mobile}&template_id=${template_id}`)
                 return otp.data.otp;
             }
-            else{
-                otp='112233' 
+            else {
+                otp = '112233'
                 return otp;
             }
         } catch (error: any) {
@@ -705,7 +706,7 @@ export default class authService {
      * @param responseBody Object
      * @returns Object
      */
-    async triggerEmail(email: any,id:any, fulldata:any) {
+    async triggerEmail(email: any, id: any, fulldata: any) {
         const result: any = {}
         const otp: any = Math.random().toFixed(6).substr(-6);
         const verifyOtpdata = `<body style="border: solid;margin-right: 15%;margin-left: 15%; ">
@@ -735,8 +736,8 @@ export default class authService {
         </strong>
         </p>
         </div></body>`
-        const verifyOtpSubject =`OTP to register on AIM Platfrom`
-        const forgotPassSubjec =`Temporary Password to Login into AIM Platfrom`
+        const verifyOtpSubject = `OTP to register on AIM Platfrom`
+        const forgotPassSubjec = `Temporary Password to Login into AIM Platfrom`
         const fullSubjec = `Welcome! Your AIM Registration was successful. Check out your login details`
         AWS.config.update({
             region: 'ap-south-1',
@@ -787,7 +788,7 @@ export default class authService {
         }
     }
     //bulk email process
-    async triggerBulkEmail(email: any,textBody:any,subText:any) {
+    async triggerBulkEmail(email: any, textBody: any, subText: any) {
         const result: any = {}
         AWS.config.update({
             region: 'ap-south-1',
@@ -853,7 +854,7 @@ export default class authService {
                 return result;
             }
             const otp = await this.generateOtp();
-            const passwordNeedToBeUpdated: any = await this.triggerOtpMsg(requestBody.mobile,0);
+            const passwordNeedToBeUpdated: any = await this.triggerOtpMsg(requestBody.mobile, 0);
             if (passwordNeedToBeUpdated instanceof Error) {
                 throw passwordNeedToBeUpdated;
             }
@@ -898,7 +899,7 @@ export default class authService {
                 return result;
             }
             const otp = await this.generateOtp();
-            const passwordNeedToBeUpdated = this.triggerOtpMsg(requestBody.mobile,0);
+            const passwordNeedToBeUpdated = this.triggerOtpMsg(requestBody.mobile, 0);
             if (passwordNeedToBeUpdated instanceof Error) {
                 throw passwordNeedToBeUpdated;
             }
@@ -921,7 +922,7 @@ export default class authService {
     async mobileotp(requestBody: any) {
         let result: any = {};
         try {
-            const otp = await this.triggerOtpMsg(requestBody.mobile,1);
+            const otp = await this.triggerOtpMsg(requestBody.mobile, 1);
             if (otp instanceof Error) {
                 throw otp;
             }
@@ -936,10 +937,10 @@ export default class authService {
             return result;
         }
     }
-     async triggerWelcome(requestBody: any) {
+    async triggerWelcome(requestBody: any) {
         let result: any = {};
         try {
-            const {school_name,udise_code,atl_code,district,state,pin_code,email,mobile} = requestBody;
+            const { school_name, udise_code, atl_code, district, state, pin_code, email, mobile } = requestBody;
             var pass = email.trim();
             var myArray = pass.split('@');
             let word = myArray[0];
@@ -966,7 +967,7 @@ export default class authService {
             <p><strong>Link: https://atl.unisolve.org</strong></p>
             <p><strong>Regards,<br> ATL Marathon</strong></p>
             </div></body>`
-            const otp = await this.triggerEmail(email,2,WelcomeTemp);
+            const otp = await this.triggerEmail(email, 2, WelcomeTemp);
             if (otp instanceof Error) {
                 throw otp;
             }
@@ -1012,7 +1013,7 @@ export default class authService {
                 passwordNeedToBeUpdated['otp'] = word;
                 passwordNeedToBeUpdated["messageId"] = speeches.AWSMESSAGEID
             } else {
-                const otpOBJ = await this.triggerEmail(requestBody.email,3,'no');
+                const otpOBJ = await this.triggerEmail(requestBody.email, 3, 'no');
                 passwordNeedToBeUpdated['otp'] = otpOBJ.otp;
                 if (passwordNeedToBeUpdated instanceof Error) {
                     throw passwordNeedToBeUpdated;
@@ -1409,7 +1410,7 @@ export default class authService {
         }
     }
 
-     /** decrypt code */
+    /** decrypt code */
     async decryptGlobal(data: any) {
         const apikey = 'PMBXDE9N53V89K65';
         try {
