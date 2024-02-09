@@ -556,20 +556,21 @@ export default class StudentController extends BaseController {
             if (mentorData.dataValues.reg_status !== '3') {
                 return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_REG_STATUS));
             }
-            const valueDis = await db.query(`SELECT 
-            district_name
-        FROM
-            districts AS d
-                JOIN
-            taluks AS t ON d.district_id = t.district_id
-                JOIN
-            blocks AS b ON t.taluk_id = b.taluk_id
-                JOIN
-            places AS p ON b.block_id = p.block_id
-                JOIN
-            institutions AS ins ON p.place_id = ins.place_id where institution_id = ${mentorData.dataValues.institution.dataValues.institution_id};`, { type: QueryTypes.SELECT });
+        //     const valueDis = await db.query(`SELECT 
+        //     district_name
+        // FROM
+        //     districts AS d
+        //         JOIN
+        //     taluks AS t ON d.district_id = t.district_id
+        //         JOIN
+        //     blocks AS b ON t.taluk_id = b.taluk_id
+        //         JOIN
+        //     places AS p ON b.block_id = p.block_id
+        //         JOIN
+        //     institutions AS ins ON p.place_id = ins.place_id where institution_id = ${mentorData.dataValues.institution.dataValues.institution_id};`, { type: QueryTypes.SELECT });
             result.data['institution_name'] = mentorData.dataValues.institution.dataValues.institution_name;
-            result.data['district'] = Object.values(valueDis[0]).toString()
+            //result.data['district'] = Object.values(valueDis[0]).toString()
+            result.data['district'] = 'Coimbatore'
             // result.data['state'] = mentorData.dataValues.organization.state;
             return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
         }
