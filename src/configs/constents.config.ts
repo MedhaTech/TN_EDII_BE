@@ -211,10 +211,9 @@ export const constents = {
   },
   common_on_off_flags: {
     list: {
-      "0": "0",
-      "1": "1"
-    },
-    default: null
+      "YES": "YES",
+      "NO": "NO"
+    }
   },
   final_result_flags: {
     list: {
