@@ -64,23 +64,20 @@ ideas.init(
             allowNull: true,
         },
         prototype_available: {
-            type: DataTypes.ENUM(...Object.values(constents.common_on_off_flags.list)),
-            defaultValue: constents.common_on_off_flags.default,
-            allowNull: true,
+            type: DataTypes.ENUM(...Object.values(constents.common_on_off_flags.list))
+
         },
         Prototype_file: {
             type: DataTypes.STRING,
             allowNull: true,
         },
         idea_available: {
-            type: DataTypes.ENUM(...Object.values(constents.common_on_off_flags.list)),
-            defaultValue: constents.common_on_off_flags.default,
-            allowNull: true,
+            type: DataTypes.ENUM(...Object.values(constents.common_on_off_flags.list))
+
         },
         self_declaration: {
-            type: DataTypes.ENUM(...Object.values(constents.common_on_off_flags.list)),
-            defaultValue: constents.common_on_off_flags.default,
-            allowNull: true,
+            type: DataTypes.ENUM(...Object.values(constents.common_on_off_flags.list))
+
         },
         status: {
             type: DataTypes.ENUM(...Object.values(constents.challenges_flags.list)),
@@ -158,5 +155,5 @@ ideas.init(
         updatedAt: 'updated_at'
     }
 );
-ideas.belongsTo(themes_problems, {targetKey: 'theme_problem_id',foreignKey: 'theme_problem_id', constraints: false });
+ideas.belongsTo(themes_problems, { targetKey: 'theme_problem_id', foreignKey: 'theme_problem_id', constraints: false });
 themes_problems.hasOne(ideas, { sourceKey: 'theme_problem_id', foreignKey: 'theme_problem_id', constraints: false });

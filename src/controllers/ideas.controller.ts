@@ -7,6 +7,8 @@ import { badRequest, notFound, unauthorized } from "boom";
 import { ideas } from "../models/ideas.model";
 import { themes_problems } from "../models/themes_problems.model";
 import { Op } from "sequelize";
+import fs from 'fs';
+import { S3 } from "aws-sdk";
 
 export default class ideasController extends BaseController {
 
@@ -20,6 +22,7 @@ export default class ideasController extends BaseController {
         this.router.post(this.path + "/initiate", this.initiateIdea.bind(this));
         this.router.put(this.path + "/ideaUpdate", this.UpdateIdea.bind(this));
         this.router.get(this.path + '/submittedDetails', this.getResponse.bind(this));
+        this.router.post(this.path + "/fileUpload", this.handleAttachment.bind(this));
         super.initializeRoutes();
     }
     protected async initiateIdeaop(req: Request, res: Response, next: NextFunction) {
@@ -155,6 +158,76 @@ export default class ideasController extends BaseController {
             return res.status(200).send(dispatcher(res, data, 'success'));
         } catch (error) {
             next(error);
+        }
+    }
+    protected async handleAttachment(req: Request, res: Response, next: NextFunction) {
+        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' ){
+            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        }
+        try {
+            let newREQQuery : any = {}
+            if(req.query.Data){
+                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery  = JSON.parse(newQuery);
+            }else if(Object.keys(req.query).length !== 0){
+                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            }
+            const { team_id } = newREQQuery;
+            const rawfiles: any = req.files;
+            const files: any = Object.values(rawfiles);
+            const allowedTypes = [
+                'image/jpeg',
+                'image/png',
+                'application/msword',
+                'application/pdf',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+            ];
+            if (!allowedTypes.includes(files[0].type)) {
+                return res.status(400).send(dispatcher(res,'','error','This file type not allowed',400)); 
+            }
+            const errs: any = [];
+            let attachments: any = [];
+            let result: any = {};
+            let s3 = new S3({
+                apiVersion: '2006-03-01',
+                region: process.env.AWS_REGION,
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+            });
+            if (!req.files) {
+                return result;
+            }
+            let file_name_prefix: any;
+            if (process.env.DB_HOST?.includes("prod")) {
+                file_name_prefix = `ideas/${team_id}`
+            } else if (process.env.DB_HOST?.includes("dev")){
+                file_name_prefix = `ideas/dev/${team_id}`
+            } else {
+                file_name_prefix = `ideas/stage/${team_id}`
+            }
+            for (const file_name of Object.keys(files)) {
+                const file = files[file_name];
+                const readFile: any = await fs.readFileSync(file.path);
+                if (readFile instanceof Error) {
+                    errs.push(`Error uploading file: ${file.originalFilename} err: ${readFile}`)
+                }
+                file.originalFilename = `${file_name_prefix}/${file.originalFilename}`;
+                let params = {
+                    Bucket: `${process.env.BUCKET}`,
+                    Key: file.originalFilename,
+                    Body: readFile
+                };
+                let options: any = { partSize: 20 * 1024 * 1024, queueSize: 2 };
+                await s3.upload(params, options).promise()
+                    .then((data: any) => { attachments.push(data.Location) })
+                    .catch((err: any) => { errs.push(`Error uploading file: ${file.originalFilename}, err: ${err.message}`) })
+                result['attachments'] = attachments;
+                result['errors'] = errs;
+            }
+            res.status(200).send(dispatcher(res, result));
+        } catch (err) {
+            next(err)
         }
     }
 }
