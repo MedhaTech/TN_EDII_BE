@@ -413,20 +413,20 @@ export default class DashboardController extends BaseController {
                 where: { team_id },
                 raw: true,
                 attributes: [
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForAllToipcsCount(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "all_topics_count"
-                    ],
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForAllToipcVideosCount(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "all_videos_count"
-                    ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForAllToipcsCount(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "all_topics_count"
+                    // ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForAllToipcVideosCount(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "all_videos_count"
+                    // ],
                     // [
                     //     db.literal(`(
                     //         ${serviceDashboard.getDbLieralForAllToipcWorksheetCount(addWhereClauseStatusPart,
@@ -441,20 +441,20 @@ export default class DashboardController extends BaseController {
                     //         )`),
                     //     "all_quiz_count"
                     // ],
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForAllToipcsCompletedCount(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "topics_completed_count"
-                    ],
-                    [
-                        db.literal(`(
-                            ${serviceDashboard.getDbLieralForVideoToipcsCompletedCount(addWhereClauseStatusPart,
-                            whereClauseStatusPartLiteral)}
-                            )`),
-                        "videos_completed_count"
-                    ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForAllToipcsCompletedCount(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "topics_completed_count"
+                    // ],
+                    // [
+                    //     db.literal(`(
+                    //         ${serviceDashboard.getDbLieralForVideoToipcsCompletedCount(addWhereClauseStatusPart,
+                    //         whereClauseStatusPartLiteral)}
+                    //         )`),
+                    //     "videos_completed_count"
+                    // ],
                     // [
                     //     db.literal(`(
                     //         ${serviceDashboard.getDbLieralForWorksheetToipcsCompletedCount(addWhereClauseStatusPart,
