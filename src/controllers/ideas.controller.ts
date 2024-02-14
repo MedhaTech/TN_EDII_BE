@@ -9,6 +9,7 @@ import { themes_problems } from "../models/themes_problems.model";
 import { Op } from "sequelize";
 import fs from 'fs';
 import { S3 } from "aws-sdk";
+import db from "../utils/dbconnection.util";
 
 export default class ideasController extends BaseController {
 
@@ -68,10 +69,21 @@ export default class ideasController extends BaseController {
             if (!team_id) {
                 throw unauthorized(speeches.USER_TEAMID_REQUIRED)
             }
-            if (problem_statement_id === 0) {
-                let result: any = await this.crudService.create(themes_problems, req.body);
+            var dataBodyforThemes = { ...req.body };
+            dataBodyforThemes['status'] = 'MANUAL'
+            if (problem_statement_id === 0 || problem_statement_id === '0') {
+                let result: any = await this.crudService.create(themes_problems, dataBodyforThemes);
                 req.body['theme_problem_id'] = result.dataValues.theme_problem_id;
             } else {
+                const where: any = {};
+                where[`theme_problem_id`] = problem_statement_id;
+                where[`status`] = 'MANUAL';
+                const finsThemeStatus: any = await this.crudService.findOne(themes_problems, { where: { 'theme_problem_id': problem_statement_id } })
+                console.log(finsThemeStatus.dataValues.status, "finsThemeStatus");
+                if (finsThemeStatus.dataValues.status === 'MANUAL') {
+                    let result: any = await this.crudService.update(themes_problems, dataBodyforThemes, { where: where });
+                    console.log(result);
+                }
                 req.body['theme_problem_id'] = problem_statement_id;
             }
             req.body['financial_year_id'] = 1;
@@ -83,7 +95,7 @@ export default class ideasController extends BaseController {
                 req.body['submitted_at'] = newFormat;
             }
             const where: any = {};
-            const valuebody = req.body; 
+            const valuebody = req.body;
             where[`team_id`] = team_id;
             let result: any = await this.crudService.update(ideas, valuebody, { where: where });
             return res.status(200).send(dispatcher(res, result, 'updated'));
@@ -116,6 +128,9 @@ export default class ideasController extends BaseController {
             }
             data = await this.crudService.findOne(ideas, {
                 attributes: [
+                    [
+                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`initiated_by\` )`), 'initiated_name'
+                    ],
                     "idea_id",
                     "financial_year_id",
                     "theme_problem_id",
@@ -152,6 +167,7 @@ export default class ideasController extends BaseController {
                         "theme_name",
                         "problem_statement",
                         "problem_statement_description",
+                        "status"
                     ]
                 }
             })
@@ -161,16 +177,16 @@ export default class ideasController extends BaseController {
         }
     }
     protected async handleAttachment(req: Request, res: Response, next: NextFunction) {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' ){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const { team_id } = newREQQuery;
             const rawfiles: any = req.files;
@@ -184,7 +200,7 @@ export default class ideasController extends BaseController {
                 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
             ];
             if (!allowedTypes.includes(files[0].type)) {
-                return res.status(400).send(dispatcher(res,'','error','This file type not allowed',400)); 
+                return res.status(400).send(dispatcher(res, '', 'error', 'This file type not allowed', 400));
             }
             const errs: any = [];
             let attachments: any = [];
@@ -201,7 +217,7 @@ export default class ideasController extends BaseController {
             let file_name_prefix: any;
             if (process.env.DB_HOST?.includes("prod")) {
                 file_name_prefix = `ideas/${team_id}`
-            } else if (process.env.DB_HOST?.includes("dev")){
+            } else if (process.env.DB_HOST?.includes("dev")) {
                 file_name_prefix = `ideas/dev/${team_id}`
             } else {
                 file_name_prefix = `ideas/stage/${team_id}`
