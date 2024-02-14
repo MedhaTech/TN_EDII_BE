@@ -889,7 +889,7 @@ export default class DashboardController extends BaseController {
             }
             const { mentor_id } = newREQQuery
             if (mentor_id) {
-                result = await db.query(`SELECT count(*) as idea_count FROM challenge_responses join teams on challenge_responses.team_id = teams.team_id where mentor_id = ${mentor_id} && challenge_responses.status = 'SUBMITTED';`, { type: QueryTypes.SELECT });
+                result = await db.query(`SELECT count(*) as idea_count FROM ideas join teams on ideas.team_id = teams.team_id where mentor_id = ${mentor_id} && ideas.status = 'SUBMITTED';`, { type: QueryTypes.SELECT });
             }
             res.status(200).send(dispatcher(res, result, 'done'))
         }
