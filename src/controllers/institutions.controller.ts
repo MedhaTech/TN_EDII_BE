@@ -32,8 +32,8 @@ export default class institutionsController extends BaseController {
     protected initializeRoutes(): void {
         this.router.post(`${this.path}/checkOrg`, validationMiddleware(institutionsCheckSchema), this.checkOrgDetails.bind(this));
         this.router.post(`${this.path}/createOrg`, validationMiddleware(institutionsRawSchema), this.createOrg.bind(this));
-        this.router.get(`${this.path}/Streams/:institution_type_id`,  this.getStreams.bind(this));
-        
+        this.router.get(`${this.path}/Streams/:institution_type_id`, this.getStreams.bind(this));
+
         super.initializeRoutes();
     };
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
@@ -207,13 +207,16 @@ export default class institutionsController extends BaseController {
         try {
             let response: any = [];
             const deValue: any = await this.authService.decryptGlobal(req.params.institution_type_id);
-            const findUniversity = await this.crudService.findOne(institution_types,{
-                where : {institution_type_id:deValue}
+            const findUniversity = await this.crudService.findOne(institution_types, {
+                where: { institution_type_id: JSON.parse(deValue) }
             })
+            if (!findUniversity) {
+                return res.status(404).send(dispatcher(res, null, 'error', 'no data found'));
+            }
             let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
-            let result : any ={};
+            let result: any = {};
             const where: any = {};
-            if(!findUniversity.dataValues.institution_type.includes("University")){
+            if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
                 where[`institution_type_id`] = JSON.parse(deValue);
                 result = await this.crudService.findAll(streams, {
                     attributes: [
@@ -227,9 +230,9 @@ export default class institutionsController extends BaseController {
                         ]
                     },
                     group: ['stream_name'],
-                    order:['stream_id']
+                    order: ['stream_id']
                 });
-            }else{
+            } else {
                 result = await this.crudService.findAll(streams, {
                     attributes: [
                         'stream_name',
@@ -241,13 +244,16 @@ export default class institutionsController extends BaseController {
                         ]
                     },
                     group: ['stream_name'],
-                    order:['stream_id']
+                    order: ['stream_id']
                 });
             }
-            result.forEach((obj: any) => {
-                response.push({stream_name:obj.dataValues.stream_name,stream_id:obj.dataValues.stream_id})
-            });
-            return res.status(200).send(dispatcher(res, response, 'success'));
+            if (result.length > 0) {
+                result.forEach((obj: any) => {
+                    response.push({ stream_name: obj.dataValues.stream_name, stream_id: obj.dataValues.stream_id })
+                });
+                return res.status(200).send(dispatcher(res, response, 'success'));
+            }
+            return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
         } catch (error) {
             next(error);
         }

@@ -36,7 +36,7 @@ export default class themes_problemsController extends BaseController {
             result.forEach((obj: any) => {
                 response.push(obj.dataValues.theme_name)
             });
-            res.status(200).send(dispatcher(res, response))
+            return res.status(200).send(dispatcher(res, response))
         } catch (err) {
             next(err)
         }
@@ -46,12 +46,12 @@ export default class themes_problemsController extends BaseController {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const theme_name = newREQQuery.theme_name;
             let response: any = [];
@@ -63,16 +63,20 @@ export default class themes_problemsController extends BaseController {
                 ],
                 where: {
                     status: 'ACTIVE',
-                    theme_name:theme_name
+                    theme_name: theme_name
                 },
                 group: ['problem_statement'],
                 order: ['theme_problem_id']
             });
-            result.forEach((obj: any) => {
-                response.push({problem_statement:obj.dataValues.problem_statement,theme_problem_id:obj.dataValues.theme_problem_id,problem_statement_description:obj.dataValues.problem_statement_description})
-            });
-            res.status(200).send(dispatcher(res, response))
+            if (result.length > 0) {
+                result.forEach((obj: any) => {
+                    response.push({ problem_statement: obj.dataValues.problem_statement, theme_problem_id: obj.dataValues.theme_problem_id, problem_statement_description: obj.dataValues.problem_statement_description })
+                });
+                return res.status(200).send(dispatcher(res, response))
+            }
+            return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
         } catch (err) {
+            console.log(err);
             next(err)
         }
     }
