@@ -6,7 +6,7 @@ import ValidationsHolder from "../validations/validationHolder";
 import BaseController from "./base.controller";
 import authService from "../services/auth.service";
 import validationMiddleware from "../middlewares/validation.middleware";
-import { Op, QueryTypes } from "sequelize";
+import { Op, QueryTypes, Sequelize } from "sequelize";
 import { constents } from "../configs/constents.config";
 import { institutionsCheckSchema, institutionsRawSchema, institutionsSchema, institutionsUpdateSchema } from "../validations/institutions.validations";
 import { places } from "../models/places.model";
@@ -211,59 +211,57 @@ export default class institutionsController extends BaseController {
     }
     private async getStreams(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            //let response: any = [];
-            // const deValue: any = await this.authService.decryptGlobal(req.params.institution_type_id);
-            // const findUniversity = await this.crudService.findOne(institution_types, {
-            //     where: { institution_type_id: JSON.parse(deValue) }
-            // })
-            // if (!findUniversity) {
-            //     return res.status(404).send(dispatcher(res, null, 'error', 'no data found'));
-            // }
-            //let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
+            let response: any = [];
+            const deValue: any = await this.authService.decryptGlobal(req.params.institution_type_id);
+            const findUniversity = await this.crudService.findOne(institution_types, {
+                where: { institution_type_id: JSON.parse(deValue) }
+            })
+            if (!findUniversity) {
+                return res.status(404).send(dispatcher(res, null, 'error', 'no data found'));
+            }
+            let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
             let result: any = {};
-            // const where: any = {};
-            // if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
-            //     where[`institution_type_id`] = JSON.parse(deValue);
-            //     // result = await this.crudService.findAll(streams, {
-            //     //     attributes: [
-            //     //         'stream_name',
-            //     //         "stream_id"
-            //     //     ],
-            //     //     where: {
-            //     //         [Op.and]: [
-            //     //             objWhereClauseStatusPart.whereClauseStatusPart,
-            //     //             where
-            //     //         ]
-            //     //     },
-            //     //     group: ['stream_name'],
-            //     //     order: ['stream_id']
-            //     // });
-            //     result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams where institution_type_id = ${deValue} group by stream_name;`, { type: QueryTypes.SELECT });
-            // } else {
-            //     // result = await this.crudService.findAll(streams, {
-            //     //     attributes: [
-            //     //         'stream_name',
-            //     //         'stream_id'
-            //     //     ],
-            //     //     where: {
-            //     //         [Op.and]: [
-            //     //             objWhereClauseStatusPart.whereClauseStatusPart
-            //     //         ]
-            //     //     },
-            //     //     group: ['stream_name'],
-            //     //     order: ['stream_id']
-            //     // });
-            //     result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`, { type: QueryTypes.SELECT });
-            // }
-            // if (result.length > 0) {
-            //     result.forEach((obj: any) => {
-            //         response.push({ stream_name: obj.dataValues.stream_name, stream_id: obj.dataValues.stream_id })
-            //     });
-            //     return res.status(200).send(dispatcher(res, response, 'success'));
-            // }
-            result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams;`, { type: QueryTypes.SELECT });
-            return res.status(200).send(dispatcher(res, result, 'success'));
-            //return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
+            const where: any = {};
+            if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
+                where[`institution_type_id`] = JSON.parse(deValue);
+                result = await this.crudService.findAll(streams, {
+                    attributes: [
+                        'stream_name',
+                        "stream_id"
+                    ],
+                    where: {
+                        [Op.and]: [
+                            objWhereClauseStatusPart.whereClauseStatusPart,
+                            where
+                        ]
+                    },
+                    order: ['stream_name']
+                });
+                //result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams where institution_type_id = ${deValue} group by stream_name;`, { type: QueryTypes.SELECT });
+            } else {
+                result = await this.crudService.findAll(streams, {
+                    attributes: [
+                        'stream_name',
+                        'stream_id'
+                    ],
+                    where: {
+                        [Op.and]: [
+                            objWhereClauseStatusPart.whereClauseStatusPart
+                        ]
+                    },
+                    order: ['stream_name']
+                });
+                //result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`, { type: QueryTypes.SELECT });
+            }
+            if (result.length > 0) {
+                result.forEach((obj: any) => {
+                    response.push({ stream_name: obj.dataValues.stream_name, stream_id: obj.dataValues.stream_id })
+                });
+                return res.status(200).send(dispatcher(res, response, 'success'));
+            }
+            // result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams;`, { type: QueryTypes.SELECT });
+            //return res.status(200).send(dispatcher(res, result, 'success'));
+            return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
         } catch (error) {
             next(error);
         }
@@ -299,7 +297,7 @@ export default class institutionsController extends BaseController {
         }
         try {
             let data: any;
-            
+
             let newREQQuery: any = {}
             if (req.query.Data) {
                 let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
@@ -335,7 +333,7 @@ export default class institutionsController extends BaseController {
                             "institution_code",
                             "institution_name",
                             "institution_name_vernacular"
-                        ],where:{
+                        ], where: {
                             institution_code: institution_code
                         },
                         include: [
