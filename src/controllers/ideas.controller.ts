@@ -220,12 +220,12 @@ export default class ideasController extends BaseController {
                 return result;
             }
             let file_name_prefix: any;
-            if (process.env.DB_HOST?.includes("prod")) {
-                file_name_prefix = `ideas/${team_id}`
+            if (process.env.DB_HOST?.includes("stage")) {
+                file_name_prefix = `ideas/stage/${team_id}`
             } else if (process.env.DB_HOST?.includes("dev")) {
                 file_name_prefix = `ideas/dev/${team_id}`
             } else {
-                file_name_prefix = `ideas/stage/${team_id}`
+                file_name_prefix = `ideas/prod/${team_id}`
             }
             for (const file_name of Object.keys(files)) {
                 const file = files[file_name];
