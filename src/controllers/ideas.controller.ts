@@ -6,7 +6,7 @@ import { speeches } from "../configs/speeches.config";
 import { badRequest, notFound, unauthorized } from "boom";
 import { ideas } from "../models/ideas.model";
 import { themes_problems } from "../models/themes_problems.model";
-import { Op } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
 import fs from 'fs';
 import { S3 } from "aws-sdk";
 import db from "../utils/dbconnection.util";
@@ -24,6 +24,7 @@ export default class ideasController extends BaseController {
         this.router.put(this.path + "/ideaUpdate", this.UpdateIdea.bind(this));
         this.router.get(this.path + '/submittedDetails', this.getResponse.bind(this));
         this.router.post(this.path + "/fileUpload", this.handleAttachment.bind(this));
+        this.router.get(`${this.path}/ideastatusbyteamId`, this.getideastatusbyteamid.bind(this));
         super.initializeRoutes();
     }
     protected async initiateIdeaop(req: Request, res: Response, next: NextFunction) {
@@ -244,6 +245,25 @@ export default class ideasController extends BaseController {
             res.status(200).send(dispatcher(res, result));
         } catch (err) {
             next(err)
+        }
+    }
+    protected async getideastatusbyteamid(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR'){
+            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        }
+        try{
+            let newREQQuery : any = {}
+            if(req.query.Data){
+                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery  = JSON.parse(newQuery);
+            }else if(Object.keys(req.query).length !== 0){
+                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            }
+            const teamId = newREQQuery.team_id;
+            const result  = await db.query(`select  ifnull((select status  FROM ideas where team_id = ${teamId}),'No Idea')ideaStatus`,{ type: QueryTypes.SELECT });
+            res.status(200).send(dispatcher(res, result, "success"))
+        }catch (error) {
+            next(error);
         }
     }
 }
