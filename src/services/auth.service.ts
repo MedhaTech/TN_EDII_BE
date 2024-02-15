@@ -375,14 +375,14 @@ export default class authService {
         let whereClause: any = {};
         try {
             if (requestBody.password === GlobalCryptoEncryptedString) {
-                whereClause = { "organization_code": requestBody.organization_code }
+                whereClause = { "institution_code": requestBody.institution_code }
             } else {
                 whereClause = {
-                    "organization_code": requestBody.organization_code,
+                    "institution_code": requestBody.institution_code,
                     "password": await bcrypt.hashSync(requestBody.password, process.env.SALT || baseConfig.SALT)
                 }
             }
-            const user_res: any = await this.crudService.findOne(organization, {
+            const user_res: any = await this.crudService.findOne(institutions, {
                 where: whereClause
             })
             if (!user_res) {
@@ -409,17 +409,16 @@ export default class authService {
                 await this.crudService.update(organization, {
                     is_loggedin: "YES",
                     last_login: new Date().toLocaleString()
-                }, { where: { organization_id: user_res.organization_id } });
+                }, { where: { institution_id: user_res.institution_id } });
 
                 user_res.is_loggedin = "YES";
                 const token = await jwtUtil.createToken(user_res.dataValues, `${process.env.PRIVATE_KEY}`);
 
                 result['data'] = {
-                    role: 'SCHOOL',
-                    organization_id: user_res.dataValues.organization_id,
-                    organization_name: user_res.dataValues.organization_name,
-                    organization_code: user_res.dataValues.organization_code,
-                    district: user_res.dataValues.district,
+                    role: 'INSTITUTION',
+                    institution_id: user_res.dataValues.institution_id,
+                    institution_name: user_res.dataValues.institution_name,
+                    institution_code: user_res.dataValues.institution_code,
                     status: user_res.dataValues.status,
                     token,
                     type: 'Bearer',
@@ -459,9 +458,9 @@ export default class authService {
     async orglogout(requestBody: any, responseBody: any) {
         let result: any = {};
         try {
-            const update_res = await this.crudService.update(organization,
+            const update_res = await this.crudService.update(institutions,
                 { is_loggedin: "NO" },
-                { where: { organization_id: requestBody.organization_id } }
+                { where: { institution_id: requestBody.institution_id } }
             );
             result['data'] = update_res;
             return result;

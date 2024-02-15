@@ -33,6 +33,8 @@ export default class institutionsController extends BaseController {
         this.router.post(`${this.path}/checkOrg`, validationMiddleware(institutionsCheckSchema), this.checkOrgDetails.bind(this));
         this.router.post(`${this.path}/createOrg`, validationMiddleware(institutionsRawSchema), this.createOrg.bind(this));
         this.router.get(`${this.path}/Streams/:institution_type_id`, this.getStreams.bind(this));
+        this.router.post(`${this.path}/login`,this.login.bind(this));
+        this.router.get(`${this.path}/logout`,this.logout.bind(this));
 
         super.initializeRoutes();
     };
@@ -256,6 +258,31 @@ export default class institutionsController extends BaseController {
             return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
         } catch (error) {
             next(error);
+        }
+    }
+    private async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const result = await this.authService.orglogin(req.body);
+            if (!result) {
+                return res.status(404).send(dispatcher(res, result, 'error', speeches.USER_NOT_FOUND));
+            }
+            else if (result.error){
+                return res.status(403).send(dispatcher(res,result,'error'));
+            }
+            else {
+                return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
+            }
+        } catch (error) {
+            return res.status(401).send(dispatcher(res, error, 'error', speeches.USER_RISTRICTED, 401));
+        }
+    }
+
+    private async logout(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        const result = await this.authService.orglogout(req.body, res);
+        if (result.error) {
+            next(result.error);
+        } else {
+            return res.status(200).send(dispatcher(res, speeches.LOGOUT_SUCCESS, 'success'));
         }
     }
 }
