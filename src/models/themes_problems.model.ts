@@ -1,7 +1,6 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { places } from './places.model';
 
 
 export class themes_problems extends Model<InferAttributes<themes_problems>, InferCreationAttributes<themes_problems>> {
