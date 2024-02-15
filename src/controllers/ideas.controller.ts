@@ -9,6 +9,7 @@ import { themes_problems } from "../models/themes_problems.model";
 import { Op, QueryTypes } from "sequelize";
 import fs from 'fs';
 import { S3 } from "aws-sdk";
+import { HttpsProxyAgent } from "https-proxy-agent";
 import db from "../utils/dbconnection.util";
 
 export default class ideasController extends BaseController {
@@ -182,6 +183,7 @@ export default class ideasController extends BaseController {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
+
             let newREQQuery: any = {}
             if (req.query.Data) {
                 let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
@@ -206,11 +208,13 @@ export default class ideasController extends BaseController {
             const errs: any = [];
             let attachments: any = [];
             let result: any = {};
+            let proxyAgent = new HttpsProxyAgent('http://10.236.241.101:9191');
             let s3 = new S3({
                 apiVersion: '2006-03-01',
                 region: process.env.AWS_REGION,
                 accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                httpOptions: { agent: proxyAgent }
             });
             if (!req.files) {
                 return result;
@@ -248,21 +252,21 @@ export default class ideasController extends BaseController {
         }
     }
     protected async getideastatusbyteamid(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
-        try{
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+        try {
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const teamId = newREQQuery.team_id;
-            const result  = await db.query(`select  ifnull((select status  FROM ideas where team_id = ${teamId}),'No Idea')ideaStatus`,{ type: QueryTypes.SELECT });
+            const result = await db.query(`select  ifnull((select status  FROM ideas where team_id = ${teamId}),'No Idea')ideaStatus`, { type: QueryTypes.SELECT });
             res.status(200).send(dispatcher(res, result, "success"))
-        }catch (error) {
+        } catch (error) {
             next(error);
         }
     }
