@@ -4,6 +4,7 @@ import BaseController from "./base.controller";
 import dispatcher from "../utils/dispatch.util";
 import { speeches } from "../configs/speeches.config";
 import { themes_problems } from "../models/themes_problems.model";
+import { Sequelize } from "sequelize";
 
 export default class themes_problemsController extends BaseController {
 
@@ -25,7 +26,8 @@ export default class themes_problemsController extends BaseController {
             let response: any = [];
             const result = await this.crudService.findAll(themes_problems, {
                 attributes: [
-                    'theme_name'
+
+                    Sequelize.fn('DISTINCT', Sequelize.col('theme_name')), 'theme_name'
                 ],
                 where: {
                     status: 'ACTIVE'
