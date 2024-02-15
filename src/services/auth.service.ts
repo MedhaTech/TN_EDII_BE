@@ -996,7 +996,7 @@ export default class authService {
                 });
             } else {
                 mentor_res = await this.crudService.findOne(user, {
-                    where: { username: requestBody.email }
+                    where: { username: requestBody.mobile }
                 });
             }
             if (!mentor_res) {
@@ -1007,14 +1007,10 @@ export default class authService {
                 where: { user_id: mentor_res.dataValues.user_id }
             });
             if (!otp) {
-                var pass = requestBody.username.trim();
-                var myArray = pass.split('@');
-                let word = myArray[0];
-                passwordNeedToBeUpdated['otp'] = word;
+                passwordNeedToBeUpdated['otp'] = requestBody.username;
                 passwordNeedToBeUpdated["messageId"] = speeches.AWSMESSAGEID
             } else {
-                const otpOBJ = await this.triggerEmail(requestBody.email, 3, 'no');
-                passwordNeedToBeUpdated['otp'] = otpOBJ.otp;
+                passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile,3);
                 if (passwordNeedToBeUpdated instanceof Error) {
                     throw passwordNeedToBeUpdated;
                 }
