@@ -211,15 +211,15 @@ export default class institutionsController extends BaseController {
     }
     private async getStreams(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            let response: any = [];
-            const deValue: any = await this.authService.decryptGlobal(req.params.institution_type_id);
-            const findUniversity = await this.crudService.findOne(institution_types, {
-                where: { institution_type_id: JSON.parse(deValue) }
-            })
-            if (!findUniversity) {
-                return res.status(404).send(dispatcher(res, null, 'error', 'no data found'));
-            }
-            let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
+            //let response: any = [];
+            // const deValue: any = await this.authService.decryptGlobal(req.params.institution_type_id);
+            // const findUniversity = await this.crudService.findOne(institution_types, {
+            //     where: { institution_type_id: JSON.parse(deValue) }
+            // })
+            // if (!findUniversity) {
+            //     return res.status(404).send(dispatcher(res, null, 'error', 'no data found'));
+            // }
+            //let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
             let result: any = {};
             // const where: any = {};
             // if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
@@ -261,7 +261,7 @@ export default class institutionsController extends BaseController {
             //     });
             //     return res.status(200).send(dispatcher(res, response, 'success'));
             // }
-            result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`, { type: QueryTypes.SELECT });
+            result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams;`, { type: QueryTypes.SELECT });
             return res.status(200).send(dispatcher(res, result, 'success'));
             //return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
         } catch (error) {
