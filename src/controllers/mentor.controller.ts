@@ -743,15 +743,15 @@ export default class MentorController extends BaseController {
     }
     private async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const { email, username, otp } = req.body;
+            const { mobile, username, otp } = req.body;
             let otpCheck = typeof otp == 'boolean' && otp == false ? otp : true;
             if (otpCheck) {
-                if (!email) {
-                    throw badRequest(speeches.USER_EMAIL_REQUIRED);
+                if (!mobile) {
+                    throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
                 }
             } else {
                 if (!username) {
-                    throw badRequest(speeches.USER_EMAIL_REQUIRED);
+                    throw badRequest(speeches.MOBILE_NUMBER_REQUIRED);
                 }
             }
             const result = await this.authService.mentorResetPassword(req.body);
@@ -760,7 +760,7 @@ export default class MentorController extends BaseController {
             } else if (result.error) {
                 return res.status(404).send(dispatcher(res, result.error, 'error', result.error));
             } else {
-                return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.USER_PASS_UPDATE, 202));
+                return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.USER_MOBILE_CHANGE, 202));
             }
         } catch (error) {
             next(error)
