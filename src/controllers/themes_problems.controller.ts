@@ -30,7 +30,6 @@ export default class themes_problemsController extends BaseController {
                 where: {
                     status: 'ACTIVE'
                 },
-                group: ['theme_name'],
                 order: ['theme_name']
             });
             result.forEach((obj: any) => {
@@ -65,7 +64,6 @@ export default class themes_problemsController extends BaseController {
                     status: 'ACTIVE',
                     theme_name: theme_name
                 },
-                group: ['problem_statement'],
                 order: ['theme_problem_id']
             });
             if (result.length > 0) {
