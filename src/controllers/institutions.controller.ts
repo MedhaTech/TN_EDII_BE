@@ -6,7 +6,7 @@ import ValidationsHolder from "../validations/validationHolder";
 import BaseController from "./base.controller";
 import authService from "../services/auth.service";
 import validationMiddleware from "../middlewares/validation.middleware";
-import { Op } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
 import { constents } from "../configs/constents.config";
 import { institutionsCheckSchema, institutionsRawSchema, institutionsSchema, institutionsUpdateSchema } from "../validations/institutions.validations";
 import { places } from "../models/places.model";
@@ -17,6 +17,7 @@ import { states } from "../models/states.model";
 import { institution_types } from "../models/institution_types.model";
 import { institution_principals } from "../models/institution_principals.model";
 import { streams } from "../models/streams.model";
+import db from "../utils/dbconnection.util"
 
 export default class institutionsController extends BaseController {
 
@@ -220,41 +221,44 @@ export default class institutionsController extends BaseController {
             const where: any = {};
             if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
                 where[`institution_type_id`] = JSON.parse(deValue);
-                result = await this.crudService.findAll(streams, {
-                    attributes: [
-                        'stream_name',
-                        "stream_id"
-                    ],
-                    where: {
-                        [Op.and]: [
-                            objWhereClauseStatusPart.whereClauseStatusPart,
-                            where
-                        ]
-                    },
-                    group: ['stream_name'],
-                    order: ['stream_id']
-                });
+                // result = await this.crudService.findAll(streams, {
+                //     attributes: [
+                //         'stream_name',
+                //         "stream_id"
+                //     ],
+                //     where: {
+                //         [Op.and]: [
+                //             objWhereClauseStatusPart.whereClauseStatusPart,
+                //             where
+                //         ]
+                //     },
+                //     group: ['stream_name'],
+                //     order: ['stream_id']
+                // });
+                result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams where institution_type_id = ${deValue} group by stream_name;`,{ type: QueryTypes.SELECT });
             } else {
-                result = await this.crudService.findAll(streams, {
-                    attributes: [
-                        'stream_name',
-                        'stream_id'
-                    ],
-                    where: {
-                        [Op.and]: [
-                            objWhereClauseStatusPart.whereClauseStatusPart
-                        ]
-                    },
-                    group: ['stream_name'],
-                    order: ['stream_id']
-                });
+                // result = await this.crudService.findAll(streams, {
+                //     attributes: [
+                //         'stream_name',
+                //         'stream_id'
+                //     ],
+                //     where: {
+                //         [Op.and]: [
+                //             objWhereClauseStatusPart.whereClauseStatusPart
+                //         ]
+                //     },
+                //     group: ['stream_name'],
+                //     order: ['stream_id']
+                // });
+                result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`,{ type: QueryTypes.SELECT });
             }
-            if (result.length > 0) {
-                result.forEach((obj: any) => {
-                    response.push({ stream_name: obj.dataValues.stream_name, stream_id: obj.dataValues.stream_id })
-                });
-                return res.status(200).send(dispatcher(res, response, 'success'));
-            }
+            // if (result.length > 0) {
+            //     result.forEach((obj: any) => {
+            //         response.push({ stream_name: obj.dataValues.stream_name, stream_id: obj.dataValues.stream_id })
+            //     });
+            //     return res.status(200).send(dispatcher(res, response, 'success'));
+            // }
+            return res.status(200).send(dispatcher(res, result, 'success'));
             return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
         } catch (error) {
             next(error);
