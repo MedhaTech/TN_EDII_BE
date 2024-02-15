@@ -9,6 +9,7 @@ import {latest_newsSchema, latest_newsUpdateSchema} from '../validations/latest_
 import { S3 } from "aws-sdk";
 import fs from 'fs';
 import { speeches } from "../configs/speeches.config";
+import { HttpsProxyAgent } from "https-proxy-agent";
 
 export default class LatestNewsController extends BaseController {
 
@@ -73,23 +74,25 @@ export default class LatestNewsController extends BaseController {
             const errs: any = [];
             let attachments: any = [];
             let result: any = {};
+            let proxyAgent = new HttpsProxyAgent('http://10.236.241.101:9191');
             let s3 = new S3({
                 apiVersion: '2006-03-01',
                 region: process.env.AWS_REGION,
                 accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                httpOptions: { agent: proxyAgent }
             });
             if (!req.files) {
                 return result;
             }
             let file_name_prefix: any;
-            if (process.env.DB_HOST?.includes("prod")) {
-                file_name_prefix = `LatestNews`
+            if (process.env.DB_HOST?.includes("stage")) {
+                file_name_prefix = `LatestNews/stage`
             } else if(process.env.DB_HOST?.includes("dev")) {
                 file_name_prefix = `LatestNews/dev`
             }
             else {
-                file_name_prefix = `LatestNews/stage`
+                file_name_prefix = `LatestNews/prod`
             }
             for (const file_name of Object.keys(files)) {
                 const file = files[file_name];
