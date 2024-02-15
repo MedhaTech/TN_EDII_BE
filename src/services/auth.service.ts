@@ -189,21 +189,21 @@ export default class authService {
         try {
             const user_data = await this.crudService.findOne(user, { where: { username: requestBody.username } });
             if (user_data) {
-                throw badRequest('Email');
+                throw badRequest('Mobile');
             } else {
                 const mentor_data = await this.crudService.findOne(mentor, { where: { mentor_email: requestBody.mentor_email } })
                 if (mentor_data) {
-                    throw badRequest('Mobile')
+                    throw badRequest('Email');
                 } else {
-                let createUserAccount = await this.crudService.create(user, requestBody);
-                let conditions = { ...requestBody, user_id: createUserAccount.dataValues.user_id };
-                let createMentorAccount = await this.crudService.create(mentor, conditions);
-                createMentorAccount.dataValues['username'] = createUserAccount.dataValues.username;
-                createMentorAccount.dataValues['user_id'] = createUserAccount.dataValues.user_id;
-                response = createMentorAccount;
-                return response;
+                    let createUserAccount = await this.crudService.create(user, requestBody);
+                    let conditions = { ...requestBody, user_id: createUserAccount.dataValues.user_id };
+                    let createMentorAccount = await this.crudService.create(mentor, conditions);
+                    createMentorAccount.dataValues['username'] = createUserAccount.dataValues.username;
+                    createMentorAccount.dataValues['user_id'] = createUserAccount.dataValues.user_id;
+                    response = createMentorAccount;
+                    return response;
+                }
             }
-        }
             // }
         } catch (error) {
             return error;
@@ -1010,7 +1010,7 @@ export default class authService {
                 passwordNeedToBeUpdated['otp'] = requestBody.username;
                 passwordNeedToBeUpdated["messageId"] = speeches.AWSMESSAGEID
             } else {
-                passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile,3);
+                passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile, 3);
                 if (passwordNeedToBeUpdated instanceof Error) {
                     throw passwordNeedToBeUpdated;
                 }
