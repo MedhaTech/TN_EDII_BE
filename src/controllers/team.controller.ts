@@ -467,16 +467,20 @@ export default class TeamController extends BaseController {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const mentorId = newREQQuery.mentor_id;
-            const result = await db.query(`SELECT teams.team_id,team_name,COUNT(teams.team_id) AS StudentCount,challenge_responses.status AS ideaStatus
-            FROM
-                teams
-                    LEFT JOIN
-                students ON teams.team_id = students.team_id
-                    LEFT JOIN
-                challenge_responses ON teams.team_id = challenge_responses.team_id
-            WHERE
-                mentor_id = ${mentorId}
-            GROUP BY teams.team_id;`, { type: QueryTypes.SELECT });
+            const result = await db.query(`SELECT 
+            teams.team_id,
+            team_name,
+            COUNT(teams.team_id) AS StudentCount,
+            ideas.status AS ideaStatus
+        FROM
+            teams
+                LEFT JOIN
+            students ON teams.team_id = students.team_id
+                LEFT JOIN
+            ideas ON teams.team_id = ideas.team_id
+        WHERE
+            mentor_id = ${mentorId}
+        GROUP BY teams.team_id;`, { type: QueryTypes.SELECT });
             res.status(200).send(dispatcher(res, result, "success"))
         } catch (error) {
             next(error);
