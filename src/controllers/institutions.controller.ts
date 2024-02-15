@@ -18,6 +18,8 @@ import { institution_types } from "../models/institution_types.model";
 import { institution_principals } from "../models/institution_principals.model";
 import { streams } from "../models/streams.model";
 import db from "../utils/dbconnection.util"
+import { mentor } from "../models/mentor.model";
+import { institutions } from "../models/institutions.model";
 
 export default class institutionsController extends BaseController {
 
@@ -34,8 +36,9 @@ export default class institutionsController extends BaseController {
         this.router.post(`${this.path}/checkOrg`, validationMiddleware(institutionsCheckSchema), this.checkOrgDetails.bind(this));
         this.router.post(`${this.path}/createOrg`, validationMiddleware(institutionsRawSchema), this.createOrg.bind(this));
         this.router.get(`${this.path}/Streams/:institution_type_id`, this.getStreams.bind(this));
-        this.router.post(`${this.path}/login`,this.login.bind(this));
-        this.router.get(`${this.path}/logout`,this.logout.bind(this));
+        this.router.post(`${this.path}/login`, this.login.bind(this));
+        this.router.get(`${this.path}/logout`, this.logout.bind(this));
+        this.router.get(`${this.path}/Mentors`, this.getMentors.bind(this));
 
         super.initializeRoutes();
     };
@@ -218,48 +221,49 @@ export default class institutionsController extends BaseController {
             }
             let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
             let result: any = {};
-            const where: any = {};
-            if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
-                where[`institution_type_id`] = JSON.parse(deValue);
-                // result = await this.crudService.findAll(streams, {
-                //     attributes: [
-                //         'stream_name',
-                //         "stream_id"
-                //     ],
-                //     where: {
-                //         [Op.and]: [
-                //             objWhereClauseStatusPart.whereClauseStatusPart,
-                //             where
-                //         ]
-                //     },
-                //     group: ['stream_name'],
-                //     order: ['stream_id']
-                // });
-                result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams where institution_type_id = ${deValue} group by stream_name;`,{ type: QueryTypes.SELECT });
-            } else {
-                // result = await this.crudService.findAll(streams, {
-                //     attributes: [
-                //         'stream_name',
-                //         'stream_id'
-                //     ],
-                //     where: {
-                //         [Op.and]: [
-                //             objWhereClauseStatusPart.whereClauseStatusPart
-                //         ]
-                //     },
-                //     group: ['stream_name'],
-                //     order: ['stream_id']
-                // });
-                result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`,{ type: QueryTypes.SELECT });
-            }
+            // const where: any = {};
+            // if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
+            //     where[`institution_type_id`] = JSON.parse(deValue);
+            //     // result = await this.crudService.findAll(streams, {
+            //     //     attributes: [
+            //     //         'stream_name',
+            //     //         "stream_id"
+            //     //     ],
+            //     //     where: {
+            //     //         [Op.and]: [
+            //     //             objWhereClauseStatusPart.whereClauseStatusPart,
+            //     //             where
+            //     //         ]
+            //     //     },
+            //     //     group: ['stream_name'],
+            //     //     order: ['stream_id']
+            //     // });
+            //     result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams where institution_type_id = ${deValue} group by stream_name;`, { type: QueryTypes.SELECT });
+            // } else {
+            //     // result = await this.crudService.findAll(streams, {
+            //     //     attributes: [
+            //     //         'stream_name',
+            //     //         'stream_id'
+            //     //     ],
+            //     //     where: {
+            //     //         [Op.and]: [
+            //     //             objWhereClauseStatusPart.whereClauseStatusPart
+            //     //         ]
+            //     //     },
+            //     //     group: ['stream_name'],
+            //     //     order: ['stream_id']
+            //     // });
+            //     result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`, { type: QueryTypes.SELECT });
+            // }
             // if (result.length > 0) {
             //     result.forEach((obj: any) => {
             //         response.push({ stream_name: obj.dataValues.stream_name, stream_id: obj.dataValues.stream_id })
             //     });
             //     return res.status(200).send(dispatcher(res, response, 'success'));
             // }
+            result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`, { type: QueryTypes.SELECT });
             return res.status(200).send(dispatcher(res, result, 'success'));
-            return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
+            //return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
         } catch (error) {
             next(error);
         }
@@ -270,8 +274,8 @@ export default class institutionsController extends BaseController {
             if (!result) {
                 return res.status(404).send(dispatcher(res, result, 'error', speeches.USER_NOT_FOUND));
             }
-            else if (result.error){
-                return res.status(403).send(dispatcher(res,result,'error'));
+            else if (result.error) {
+                return res.status(403).send(dispatcher(res, result, 'error'));
             }
             else {
                 return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
@@ -287,6 +291,122 @@ export default class institutionsController extends BaseController {
             next(result.error);
         } else {
             return res.status(200).send(dispatcher(res, speeches.LOGOUT_SUCCESS, 'success'));
+        }
+    }
+    protected async getMentors(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            let data: any;
+            
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
+            }
+            const institution_code = newREQQuery.institution_code
+            try {
+                const responseOfFindAndCountAll = await this.crudService.findAndCountAll(mentor, {
+                    attributes: [
+                        "mentor_id",
+                        "financial_year_id",
+                        "user_id",
+                        "institution_id",
+                        "mentor_title",
+                        "mentor_name",
+                        "mentor_name_vernacular",
+                        "mentor_mobile",
+                        "mentor_whatapp_mobile",
+                        "mentor_email",
+                        "date_of_birth",
+                        "gender"
+                    ],
+                    where: {
+                        status: 'ACTIVE'
+                    },
+                    include:
+                    {
+                        model: institutions,
+                        attributes: [
+                            "institution_id",
+                            "institution_code",
+                            "institution_name",
+                            "institution_name_vernacular"
+                        ],where:{
+                            institution_code: institution_code
+                        },
+                        include: [
+                            {
+                                model: places,
+                                attributes: [
+                                    'place_id',
+                                    'place_type',
+                                    'place_name',
+                                    'place_name_vernacular'
+                                ],
+                                include: {
+                                    model: taluks,
+                                    attributes: [
+                                        'taluk_id',
+                                        'taluk_name',
+                                        'taluk_name_vernacular'
+
+                                    ],
+                                    include: {
+                                        model: blocks,
+                                        attributes: [
+                                            'block_id',
+                                            'block_name',
+                                            'block_name_vernacular'
+                                        ],
+                                        include: {
+                                            model: districts,
+                                            attributes: [
+                                                'district_id',
+                                                'district_name',
+                                                'district_name_vernacular',
+                                                'district_headquarters',
+                                                'district_headquarters_vernacular'
+                                            ],
+                                            include: {
+                                                model: states,
+                                                attributes: [
+                                                    'state_id',
+                                                    'state_name',
+                                                    'state_name_vernacular'
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                model: institution_types,
+                                attributes: [
+                                    'institution_type_id',
+                                    'institution_type'
+                                ]
+                            }
+                        ]
+                    },
+                })
+                data = responseOfFindAndCountAll;
+            } catch (error: any) {
+                return res.status(500).send(dispatcher(res, data, 'error'))
+            }
+            if (!data || data instanceof Error) {
+                if (data != null) {
+                    throw notFound(data.message)
+                } else {
+                    throw notFound()
+                }
+            }
+            return res.status(200).send(dispatcher(res, data, 'success'));
+        } catch (error) {
+            next(error);
         }
     }
 }
