@@ -121,16 +121,16 @@ export default class TeamController extends BaseController {
                     [
                         db.literal(`(
                             SELECT status
-                            FROM challenge_responses AS idea
+                            FROM ideas AS idea
                             WHERE idea.team_id = \`team\`.\`team_id\`
                         )`), 'ideaStatus'
                     ],
                     [
                         db.literal(`(
-                            SELECT challenge_response_id
-                            FROM challenge_responses AS idea
+                            SELECT idea_id
+                            FROM ideas AS idea
                             WHERE idea.team_id = \`team\`.\`team_id\`
-                        )`), 'challenge_response_id'
+                        )`), 'idea_id'
                     ]
                 ]
             } else {
@@ -156,7 +156,7 @@ export default class TeamController extends BaseController {
                     [
                         db.literal(`(
                             SELECT status
-                            FROM challenge_responses AS idea
+                            FROM ideas AS idea
                             WHERE idea.team_id = \`team\`.\`team_id\`
                         )`), 'ideaStatus'
                     ]
