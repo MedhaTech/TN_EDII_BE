@@ -67,34 +67,39 @@ export default class ideasController extends BaseController {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            const { team_id, problem_statement_id, status } = req.body;
+            const { team_id, problem_statement_id, status, initiated_by } = req.body;
             if (!team_id) {
                 throw unauthorized(speeches.USER_TEAMID_REQUIRED)
             }
             var dataBodyforThemes = { ...req.body };
             dataBodyforThemes['status'] = 'MANUAL'
-            if (problem_statement_id === 0 || problem_statement_id === '0') {
-                let result: any = await this.crudService.create(themes_problems, dataBodyforThemes);
-                req.body['theme_problem_id'] = result.dataValues.theme_problem_id;
-            } else {
-                const where: any = {};
-                where[`theme_problem_id`] = problem_statement_id;
-                where[`status`] = 'MANUAL';
-                const finsThemeStatus: any = await this.crudService.findOne(themes_problems, { where: { 'theme_problem_id': problem_statement_id } })
-                console.log(finsThemeStatus.dataValues.status, "finsThemeStatus");
-                if (finsThemeStatus.dataValues.status === 'MANUAL') {
-                    let result: any = await this.crudService.update(themes_problems, dataBodyforThemes, { where: where });
-                    console.log(result);
+            if (problem_statement_id) {
+                if (problem_statement_id === 0 || problem_statement_id === '0') {
+                    let result: any = await this.crudService.create(themes_problems, dataBodyforThemes);
+                    req.body['theme_problem_id'] = result.dataValues.theme_problem_id;
+                } else {
+                    const where: any = {};
+                    where[`theme_problem_id`] = problem_statement_id;
+                    where[`status`] = 'MANUAL';
+                    const finsThemeStatus: any = await this.crudService.findOne(themes_problems, { where: { 'theme_problem_id': problem_statement_id } })
+
+                    if (finsThemeStatus.dataValues.status === 'MANUAL') {
+                        let result: any = await this.crudService.update(themes_problems, dataBodyforThemes, { where: where });
+                    }
+                    req.body['theme_problem_id'] = problem_statement_id;
                 }
-                req.body['theme_problem_id'] = problem_statement_id;
             }
-            req.body['financial_year_id'] = 1;
-            if (status === 'DRAFT') {
-                req.body['submitted_at'] = null;
-            } else {
-                let newDate = new Date();
-                let newFormat = (newDate.getFullYear()) + "-" + (1 + newDate.getMonth()) + "-" + newDate.getUTCDate() + ' ' + newDate.getHours() + ':' + newDate.getMinutes() + ':' + newDate.getSeconds();
-                req.body['submitted_at'] = newFormat;
+            if (initiated_by) {
+                req.body['financial_year_id'] = 1;
+            }
+            if (status) {
+                if (status === 'DRAFT') {
+                    req.body['submitted_at'] = null;
+                } else {
+                    let newDate = new Date();
+                    let newFormat = (newDate.getFullYear()) + "-" + (1 + newDate.getMonth()) + "-" + newDate.getUTCDate() + ' ' + newDate.getHours() + ':' + newDate.getMinutes() + ':' + newDate.getSeconds();
+                    req.body['submitted_at'] = newFormat;
+                }
             }
             const where: any = {};
             const valuebody = req.body;
@@ -132,6 +137,9 @@ export default class ideasController extends BaseController {
                 attributes: [
                     [
                         db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`initiated_by\` )`), 'initiated_name'
+                    ],
+                    [
+                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`verified_by\` )`), 'verified_name'
                     ],
                     "idea_id",
                     "financial_year_id",
