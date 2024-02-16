@@ -15,7 +15,7 @@ export class institutions extends Model<InferAttributes<institutions>, InferCrea
     declare created_at: Date;
     declare updated_by: number;
     declare updated_at: Date;
-    
+    declare role:string;
 }
 
 institutions.init({
@@ -65,7 +65,10 @@ institutions.init({
         allowNull: true,
         defaultValue: DataTypes.NOW,
         onUpdate: new Date().toLocaleString()
-    }
+    },
+    role: {
+        type: DataTypes.STRING
+    },
 },
     {
         sequelize: db,

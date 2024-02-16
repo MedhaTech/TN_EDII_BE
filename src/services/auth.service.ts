@@ -415,7 +415,7 @@ export default class authService {
                 const token = await jwtUtil.createToken(user_res.dataValues, `${process.env.PRIVATE_KEY}`);
 
                 result['data'] = {
-                    role: 'INSTITUTION',
+                    role: user_res.dataValues.role,
                     institution_id: user_res.dataValues.institution_id,
                     institution_name: user_res.dataValues.institution_name,
                     institution_code: user_res.dataValues.institution_code,
