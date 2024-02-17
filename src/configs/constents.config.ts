@@ -64,6 +64,37 @@ export const constents = {
     },
     default: 'ACTIVE'
   },
+  institutions_status_flags: {
+    list: {
+      'NEW': 'NEW',
+      'ACTIVE': 'ACTIVE',
+      'INACTIVE': 'INACTIVE',
+      'DELETED': 'DELETED',
+      'LOCKED': 'LOCKED'
+    },
+    default: 'ACTIVE'
+  },
+  place_type_status_flags: {
+    list: {
+      'METRO': 'METRO',
+      'URBAN': 'URBAN',
+      'SEMI-URBAN': 'SEMI-URBAN',
+      'RURAL': 'RURAL'
+    }
+  },
+  course_catrgory_flages:{
+    list:{
+      'UG':'UG',
+      'PG':'PG',
+      'DIPLOMA':'DIPLOMA'
+    }
+  },
+  special_category_flages:{
+    list:{
+      '0':'0',
+      "1":'1'
+    }
+  },
   support_tickets_status_flags: {
     list: {
       'OPEN': 'OPEN',
@@ -178,6 +209,12 @@ export const constents = {
     },
     default: "DRAFT"
   },
+  common_on_off_flags: {
+    list: {
+      "YES": "YES",
+      "NO": "NO"
+    }
+  },
   final_result_flags: {
     list: {
       "0": "0",
@@ -213,7 +250,7 @@ export const constents = {
     },
     default: "ALL"
   },
-  TEAMS_MAX_STUDENTS_ALLOWED: 3,
+  TEAMS_MAX_STUDENTS_ALLOWED: 5,
   ALPHA_NUMERIC_PATTERN: /^[a-zA-Z0-9 ]*$/,
   ONLY_DIGIT_PATTERN : /^\d+$/,
   certificate_flags: {

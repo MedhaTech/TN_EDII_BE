@@ -13,7 +13,7 @@ import { admin } from "../models/admin.model";
 import { evaluator } from "../models/evaluator.model";
 import { mentor } from "../models/mentor.model";
 import { organization } from '../models/organization.model';
-import {state_coordinators} from '../models/state_coordinators.model';
+import { state_coordinators } from '../models/state_coordinators.model';
 import { student } from "../models/student.model";
 import { user } from "../models/user.model";
 import { team } from '../models/team.model';
@@ -25,42 +25,122 @@ import { worksheet_response } from "../models/worksheet_response.model";
 import { mentor_topic_progress } from '../models/mentor_topic_progress.model';
 import { constents } from '../configs/constents.config';
 import AWS from 'aws-sdk';
+import { institutions } from '../models/institutions.model';
+import { places } from '../models/places.model';
+import { blocks } from '../models/blocks.model';
+import { taluks } from '../models/taluks.model';
+import { districts } from '../models/districts.model';
+import { states } from '../models/states.model';
+import { institution_types } from '../models/institution_types.model';
+import { institution_principals } from '../models/institution_principals.model';
 export default class authService {
     crudService: CRUDService = new CRUDService;
     private otp = '112233';
-    
+
     /**
-     * find organization details using organization code and attach mentor details
-     * @param organization_code String
+     * find institution details using institution code and attach mentor details
+     * @param institution_code String
      * @returns object
      */
-    async checkOrgDetails(organization_code: any) {
+    async checkOrgDetails(institution_code: any) {
         try {
-            const org = await this.crudService.findOne(organization, {
+            const org = await this.crudService.findAll(institutions, {
                 where: {
-                    organization_code: organization_code,
+                    institution_code: institution_code,
                     status: {
                         [Op.or]: ['ACTIVE', 'NEW']
                     }
                 },
-                include: {
-                    model: mentor,
-                    attributes: [
-                        "mentor_id",
-                        'user_id',
-                        'full_name',
-                        'mobile',
-                        'whatapp_mobile',
-                        'gender',
-                        'title'
-                    ],
-                    include: {
-                        model: user,
+                attributes: [
+                    "institution_id",
+                    "institution_code",
+                    "institution_name",
+                    "institution_name_vernacular"
+                ],
+                include: [
+                    {
+                        model: places,
                         attributes: [
-                            'username'
+                            'place_id',
+                            'place_type',
+                            'place_name',
+                            'place_name_vernacular'
+                        ],
+                        include: {
+                            model: taluks,
+                            attributes: [
+                                'taluk_id',
+                                'taluk_name',
+                                'taluk_name_vernacular'
+
+                            ],
+                            include: {
+                                model: blocks,
+                                attributes: [
+                                    'block_id',
+                                    'block_name',
+                                    'block_name_vernacular'
+                                ],
+                                include: {
+                                    model: districts,
+                                    attributes: [
+                                        'district_id',
+                                        'district_name',
+                                        'district_name_vernacular',
+                                        'district_headquarters',
+                                        'district_headquarters_vernacular'
+                                    ],
+                                    include: {
+                                        model: states,
+                                        attributes: [
+                                            'state_id',
+                                            'state_name',
+                                            'state_name_vernacular'
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        model: institution_types,
+                        attributes: [
+                            'institution_type_id',
+                            'institution_type'
                         ]
+                    },
+                    {
+                        model: institution_principals,
+                        attributes: [
+                            'institution_principal_id',
+                            'principal_name',
+                            'principal_name_vernacular',
+                            'principal_email',
+                            'principal_mobile',
+                            'ed_cell_coordinator_name',
+                            'ed_cell_coordinator_name_vernacular',
+                            'ed_cell_coordinator_email',
+                            'ed_cell_coordinator_mobile'
+                        ]
+                    },
+                    {
+                        model: mentor,
+                        attributes: [
+                            "mentor_id",
+                            "financial_year_id",
+                            "user_id",
+                            "institution_id",
+                            "mentor_title",
+                            "mentor_name",
+                            "mentor_name_vernacular",
+                            "mentor_mobile",
+                            "mentor_whatapp_mobile",
+                            "mentor_email",
+                            "date_of_birth",
+                            "gender"
+                        ],
                     }
-                }
+                ]
             })
             return org;
         } catch (error) {
@@ -109,12 +189,12 @@ export default class authService {
         try {
             const user_data = await this.crudService.findOne(user, { where: { username: requestBody.username } });
             if (user_data) {
-                throw badRequest('Email');
+                throw badRequest('Mobile');
             } else {
-                // const mentor_data = await this.crudService.findOne(mentor, { where: { mobile: requestBody.mobile } })
-                // if (mentor_data) {
-                //     throw badRequest('Mobile')
-                // } else {
+                const mentor_data = await this.crudService.findOne(mentor, { where: { mentor_email: requestBody.mentor_email } })
+                if (mentor_data) {
+                    throw badRequest('Email');
+                } else {
                     let createUserAccount = await this.crudService.create(user, requestBody);
                     let conditions = { ...requestBody, user_id: createUserAccount.dataValues.user_id };
                     let createMentorAccount = await this.crudService.create(mentor, conditions);
@@ -123,6 +203,7 @@ export default class authService {
                     response = createMentorAccount;
                     return response;
                 }
+            }
             // }
         } catch (error) {
             return error;
@@ -294,14 +375,14 @@ export default class authService {
         let whereClause: any = {};
         try {
             if (requestBody.password === GlobalCryptoEncryptedString) {
-                whereClause = { "organization_code": requestBody.organization_code}
+                whereClause = { "institution_code": requestBody.institution_code }
             } else {
                 whereClause = {
-                    "organization_code": requestBody.organization_code,
+                    "institution_code": requestBody.institution_code,
                     "password": await bcrypt.hashSync(requestBody.password, process.env.SALT || baseConfig.SALT)
                 }
             }
-            const user_res: any = await this.crudService.findOne(organization, {
+            const user_res: any = await this.crudService.findOne(institutions, {
                 where: whereClause
             })
             if (!user_res) {
@@ -328,17 +409,16 @@ export default class authService {
                 await this.crudService.update(organization, {
                     is_loggedin: "YES",
                     last_login: new Date().toLocaleString()
-                }, { where: { organization_id: user_res.organization_id } });
+                }, { where: { institution_id: user_res.institution_id } });
 
                 user_res.is_loggedin = "YES";
                 const token = await jwtUtil.createToken(user_res.dataValues, `${process.env.PRIVATE_KEY}`);
 
                 result['data'] = {
-                    role:'SCHOOL',
-                    organization_id: user_res.dataValues.organization_id,
-                    organization_name: user_res.dataValues.organization_name,
-                    organization_code: user_res.dataValues.organization_code,
-                    district: user_res.dataValues.district,
+                    role: user_res.dataValues.role,
+                    institution_id: user_res.dataValues.institution_id,
+                    institution_name: user_res.dataValues.institution_name,
+                    institution_code: user_res.dataValues.institution_code,
                     status: user_res.dataValues.status,
                     token,
                     type: 'Bearer',
@@ -378,9 +458,9 @@ export default class authService {
     async orglogout(requestBody: any, responseBody: any) {
         let result: any = {};
         try {
-            const update_res = await this.crudService.update(organization,
+            const update_res = await this.crudService.update(institutions,
                 { is_loggedin: "NO" },
-                { where: { organization_id: requestBody.organization_id } }
+                { where: { institution_id: requestBody.institution_id } }
             );
             result['data'] = update_res;
             return result;
@@ -432,18 +512,18 @@ export default class authService {
             return result;
         }
     }
-     /**
-     *find the user and update the password field
-     * @param requestBody Objects
-     * @param responseBody Objects
-     * @returns Objects
-     */
-     async orgchangePassword(requestBody: any, responseBody: any) {
+    /**
+    *find the user and update the password field
+    * @param requestBody Objects
+    * @param responseBody Objects
+    * @returns Objects
+    */
+    async orgchangePassword(requestBody: any, responseBody: any) {
         let result: any = {};
         try {
             const user_res: any = await this.crudService.findOnePassword(organization, {
                 where: {
-                    organization_id : requestBody.organization_id
+                    organization_id: requestBody.organization_id
                 }
             });
             if (!user_res) {
@@ -481,7 +561,7 @@ export default class authService {
         let whereClause: any = {};
         try {
             if (requestBody.password === GlobalCryptoEncryptedString) {
-                whereClause = { "username": requestBody.username}
+                whereClause = { "username": requestBody.username }
             } else {
                 whereClause = {
                     "username": requestBody.username,
@@ -522,7 +602,7 @@ export default class authService {
 
                 result['data'] = {
                     id: user_res.dataValues.state_coordinators_id,
-                    role:user_res.dataValues.role,
+                    role: user_res.dataValues.role,
                     username: user_res.dataValues.username,
                     state_name: user_res.dataValues.state_name,
                     status: user_res.dataValues.status,
@@ -556,18 +636,18 @@ export default class authService {
             return result;
         }
     }
-     /**
-     *find the district user and update the password field
-     * @param requestBody Objects
-     * @param responseBody Objects
-     * @returns Objects
-     */
-     async statechangePassword(requestBody: any, responseBody: any) {
+    /**
+    *find the district user and update the password field
+    * @param requestBody Objects
+    * @param responseBody Objects
+    * @returns Objects
+    */
+    async statechangePassword(requestBody: any, responseBody: any) {
         let result: any = {};
         try {
             const user_res: any = await this.crudService.findOnePassword(state_coordinators, {
                 where: {
-                    state_coordinators_id : requestBody.id
+                    state_coordinators_id: requestBody.id
                 }
             });
             if (!user_res) {
@@ -600,22 +680,22 @@ export default class authService {
         // return Math.random().toFixed(6).substr(-6);
         return this.otp;
     }
-     /**
-     * Trigger OTP Message to specific mobile
-     * @param mobile Number
-     * @returns Number
-     */
-     async triggerOtpMsg(mobile: any,template_id:any) {
+    /**
+    * Trigger OTP Message to specific mobile
+    * @param mobile Number
+    * @returns Number
+    */
+    async triggerOtpMsg(mobile: any, template_id: any) {
         try {
             let otp
-            // if(process.env.MOBILE_SMS_URl != ""){
-            //     otp = await axios.get(`${process.env.MOBILE_SMS_URl}${mobile}&template_id=${template_id}`)
-            //     return otp.data.otp;
-            // }
-            // else{
-                //otp = Math.random().toFixed(6).substr(-6);
-                otp='112233' 
+            if (process.env.MOBILE_SMS_URl != "") {
+                otp = await axios.get(`${process.env.MOBILE_SMS_URl}${mobile}&template_id=${template_id}`)
+                return otp.data.otp;
+            }
+            else {
+                otp = '112233'
                 return otp;
+            }
         } catch (error: any) {
             return error
         }
@@ -626,7 +706,7 @@ export default class authService {
      * @param responseBody Object
      * @returns Object
      */
-    async triggerEmail(email: any,id:any, fulldata:any) {
+    async triggerEmail(email: any, id: any, fulldata: any) {
         const result: any = {}
         const otp: any = Math.random().toFixed(6).substr(-6);
         const verifyOtpdata = `<body style="border: solid;margin-right: 15%;margin-left: 15%; ">
@@ -656,8 +736,8 @@ export default class authService {
         </strong>
         </p>
         </div></body>`
-        const verifyOtpSubject =`OTP to register on AIM Platfrom`
-        const forgotPassSubjec =`Temporary Password to Login into AIM Platfrom`
+        const verifyOtpSubject = `OTP to register on AIM Platfrom`
+        const forgotPassSubjec = `Temporary Password to Login into AIM Platfrom`
         const fullSubjec = `Welcome! Your AIM Registration was successful. Check out your login details`
         AWS.config.update({
             region: 'ap-south-1',
@@ -708,7 +788,7 @@ export default class authService {
         }
     }
     //bulk email process
-    async triggerBulkEmail(email: any,textBody:any,subText:any) {
+    async triggerBulkEmail(email: any, textBody: any, subText: any) {
         const result: any = {}
         AWS.config.update({
             region: 'ap-south-1',
@@ -774,7 +854,7 @@ export default class authService {
                 return result;
             }
             const otp = await this.generateOtp();
-            const passwordNeedToBeUpdated: any = await this.triggerOtpMsg(requestBody.mobile,0);
+            const passwordNeedToBeUpdated: any = await this.triggerOtpMsg(requestBody.mobile, 0);
             if (passwordNeedToBeUpdated instanceof Error) {
                 throw passwordNeedToBeUpdated;
             }
@@ -819,7 +899,7 @@ export default class authService {
                 return result;
             }
             const otp = await this.generateOtp();
-            const passwordNeedToBeUpdated = this.triggerOtpMsg(requestBody.mobile,0);
+            const passwordNeedToBeUpdated = this.triggerOtpMsg(requestBody.mobile, 0);
             if (passwordNeedToBeUpdated instanceof Error) {
                 throw passwordNeedToBeUpdated;
             }
@@ -842,28 +922,25 @@ export default class authService {
     async mobileotp(requestBody: any) {
         let result: any = {};
         try {
-            const user_data = await this.crudService.findOne(user, { where: { username: requestBody.username } });
-            if (user_data) {
-                throw badRequest('Email');
-            }
-            else{
-                const otp = await this.triggerEmail(requestBody.username,1,'no');
+            const otp = await this.triggerOtpMsg(requestBody.mobile, 1);
             if (otp instanceof Error) {
                 throw otp;
             }
-            const hashedPassword = await this.encryptGlobal(JSON.stringify(otp.otp));
-            result.data = hashedPassword;
+            const key = "PMBXDE9N53V89K65"
+            const stringotp = String(otp);
+            const encryptedValue = CryptoJS.AES.encrypt(stringotp, key).toString();
+            const encoded = btoa(encryptedValue);
+            result.data = encoded;
             return result;
-            }
         } catch (error) {
             result['error'] = error;
             return result;
         }
     }
-     async triggerWelcome(requestBody: any) {
+    async triggerWelcome(requestBody: any) {
         let result: any = {};
         try {
-            const {school_name,udise_code,atl_code,district,state,pin_code,email,mobile} = requestBody;
+            const { school_name, udise_code, atl_code, district, state, pin_code, email, mobile } = requestBody;
             var pass = email.trim();
             var myArray = pass.split('@');
             let word = myArray[0];
@@ -890,7 +967,7 @@ export default class authService {
             <p><strong>Link: https://atl.unisolve.org</strong></p>
             <p><strong>Regards,<br> ATL Marathon</strong></p>
             </div></body>`
-            const otp = await this.triggerEmail(email,2,WelcomeTemp);
+            const otp = await this.triggerEmail(email, 2, WelcomeTemp);
             if (otp instanceof Error) {
                 throw otp;
             }
@@ -919,7 +996,7 @@ export default class authService {
                 });
             } else {
                 mentor_res = await this.crudService.findOne(user, {
-                    where: { username: requestBody.email }
+                    where: { username: requestBody.mobile }
                 });
             }
             if (!mentor_res) {
@@ -930,14 +1007,10 @@ export default class authService {
                 where: { user_id: mentor_res.dataValues.user_id }
             });
             if (!otp) {
-                var pass = requestBody.username.trim();
-                var myArray = pass.split('@');
-                let word = myArray[0];
-                passwordNeedToBeUpdated['otp'] = word;
+                passwordNeedToBeUpdated['otp'] = requestBody.username;
                 passwordNeedToBeUpdated["messageId"] = speeches.AWSMESSAGEID
             } else {
-                const otpOBJ = await this.triggerEmail(requestBody.email,3,'no');
-                passwordNeedToBeUpdated['otp'] = otpOBJ.otp;
+                passwordNeedToBeUpdated['otp'] = await this.triggerOtpMsg(requestBody.mobile, 3);
                 if (passwordNeedToBeUpdated instanceof Error) {
                     throw passwordNeedToBeUpdated;
                 }
@@ -1333,7 +1406,7 @@ export default class authService {
         }
     }
 
-     /** decrypt code */
+    /** decrypt code */
     async decryptGlobal(data: any) {
         const apikey = 'PMBXDE9N53V89K65';
         try {

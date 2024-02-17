@@ -45,5 +45,8 @@ export const wildcardRoutes = [
     "/otpScript",
     "/api/v1/auth/roadMap",
     "/api/v1/state_coordinators/login",
-    "/api/v1/mentors/triggerWelcomeEmail"
+    "/api/v1/mentors/triggerWelcomeEmail",
+    "/api/v1/institutions/checkOrg",
+    "/api/v1/institutions/login",
+    "/api/v1/institutions/logout"
 ];

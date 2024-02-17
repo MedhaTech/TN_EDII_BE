@@ -24,6 +24,14 @@ import { badRequest, internal, notFound } from 'boom';
 import { find } from 'lodash';
 import { string } from 'joi';
 import db from "../utils/dbconnection.util"
+import { institutions } from '../models/institutions.model';
+import { places } from '../models/places.model';
+import { blocks } from '../models/blocks.model';
+import { taluks } from '../models/taluks.model';
+import { districts } from '../models/districts.model';
+import { states } from '../models/states.model';
+import { institution_types } from '../models/institution_types.model';
+import { streams } from '../models/streams.model';
 
 export default class StudentController extends BaseController {
     model = "student";
@@ -40,7 +48,7 @@ export default class StudentController extends BaseController {
     protected initializeRoutes(): void {
         //example route to add
         //this.router.get(`${this.path}/`, this.getData);
-        this.router.post(`${this.path}/register`, validationMiddleware(studentRegSchema),this.register.bind(this));
+        this.router.post(`${this.path}/register`, validationMiddleware(studentRegSchema), this.register.bind(this));
         this.router.post(`${this.path}/addStudent`, this.register.bind(this));
         this.router.post(`${this.path}/bulkCreateStudent`, this.bulkCreateStudent.bind(this));
         this.router.post(`${this.path}/login`, validationMiddleware(studentLoginSchema), this.login.bind(this));
@@ -49,23 +57,23 @@ export default class StudentController extends BaseController {
         // this.router.put(`${this.path}/updatePassword`, validationMiddleware(studentChangePasswordSchema), this.updatePassword.bind(this));
         this.router.put(`${this.path}/resetPassword`, validationMiddleware(studentResetPasswordSchema), this.resetPassword.bind(this));
         this.router.get(`${this.path}/:student_user_id/studentCertificate`, this.studentCertificate.bind(this));
-        this.router.post(`${this.path}/:student_user_id/badges`, this.addBadgeToStudent.bind(this));
+        //this.router.post(`${this.path}/:student_user_id/badges`, this.addBadgeToStudent.bind(this));
         this.router.get(`${this.path}/:student_user_id/badges`, this.getStudentBadges.bind(this));
         this.router.get(`${this.path}/passwordUpdate`, this.studentPasswordUpdate.bind(this));
-        this.router.post(`${this.path}/stuIdeaSubmissionEmail`,this.stuIdeaSubmissionEmail.bind(this));
+        this.router.post(`${this.path}/stuIdeaSubmissionEmail`, this.stuIdeaSubmissionEmail.bind(this));
         super.initializeRoutes();
     }
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             let data: any;
             const { model, id } = req.params;
@@ -99,115 +107,208 @@ export default class StudentController extends BaseController {
             let stateFilter: any = {}
             if (state) {
                 stateFilter['whereClause'] = state && typeof state == 'string' && state !== 'All States' ? { state } : {}
-                stateFilter["liter"] = state && typeof state == 'string' && state !== 'All States' ? db.literal('`team->mentor->organization`.`state` = ' + JSON.stringify(state)) : {}
+                //stateFilter["liter"] = state && typeof state == 'string' && state !== 'All States' ? db.literal('`team->mentor->institutions->places->blocks->taluks->districts->states`.`state_name` = ' + JSON.stringify(state)) : {}
             }
             if (id) {
                 const newParamId = await this.authService.decryptGlobal(req.params.id);
                 where[`${this.model}_id`] = newParamId;
                 data = await this.crudService.findOne(modelClass, {
-                    attributes: {
-                        include: [
-                            [
-                                db.literal(`( SELECT username FROM users AS u WHERE u.user_id = \`student\`.\`user_id\`)`), 'username_email'
-                            ]
-                        ]
-                },
+                    attributes: [
+                        'student_full_name',
+                        'date_of_birth',
+                        'mobile',
+                        'email',
+                        'Gender',
+                        'Age',
+                        'year_of_study'
+                    ],
                     where: {
                         [Op.and]: [
                             whereClauseStatusPart,
                             where,
                         ],
                     },
-                    include: {
-                        model: team,
-                        attributes: [
-                            'team_id',
-                            'team_name',
-                            'mentor_id',
-                            'moc_name',
-                            'moc_gender',
-                            'moc_email',
-                            'moc_phone'
-                        ],
-                        include: {
-                            model: mentor,
-                            attributes: [
-                                'organization_code',
-                                'full_name',
-                                'gender',
-                                'mobile',
-                            ],
-                            include: {
-                                model: organization,
-                                attributes: [
-                                    "organization_name",
-                                    'organization_code',
-                                    "unique_code",
-                                    "pin_code",
-                                    "category",
-                                    "principal_name",
-                                    "principal_mobile",
-                                    "city",
-                                    "district",
-                                    "state",
-                                    "country",
-                                    'address'
-                                ],
-                            },
-                            
-                        },
-                    },
-                });
-            } else {
-                try {
-                    const responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
-                        attributes: {
-                            include: [
-                                [
-                                    db.literal(`( SELECT username FROM users AS u WHERE u.user_id = \`student\`.\`user_id\`)`), 'username_email'
-                                ]
-                            ]
-                    },
-                        where: {
-                            [Op.and]: [
-                                whereClauseStatusPart,
-                                condition,
-                                stateFilter.liter
-                            ]
-                        },
-                        include: {
+                    include: [
+                        {
                             model: team,
                             attributes: [
                                 'team_id',
                                 'team_name',
-                                'moc_name',
-                                'moc_gender',
-                                'moc_email',
-                                'moc_phone'
+                                'mentor_id'
                             ],
                             include: {
                                 model: mentor,
                                 attributes: [
-                                    'mentor_id',
-                                    'full_name'
+                                    'mentor_name',
+                                    'gender',
+                                    'mentor_mobile'
                                 ],
-                                include: {
-                                    where: stateFilter.whereClause,
-                                    required: false,
-                                    model: organization,
+                                include:
+                                {
+                                    model: institutions,
                                     attributes: [
-                                        "organization_name",
-                                        'organization_code',
-                                        "unique_code",
-                                        "pin_code",
-                                        "category",
-                                        "city",
-                                        "district",
-                                        "state",
-                                        'address'
+                                        "institution_id",
+                                        "institution_code",
+                                        "institution_name",
+                                        "institution_name_vernacular"
+                                    ],
+                                    include: [
+                                        {
+                                            model: places,
+                                            attributes: [
+                                                'place_id',
+                                                'place_type',
+                                                'place_name',
+                                                'place_name_vernacular'
+                                            ],
+                                            include: {
+                                                model: taluks,
+                                                attributes: [
+                                                    'taluk_id',
+                                                    'taluk_name',
+                                                    'taluk_name_vernacular'
+
+                                                ],
+                                                include: {
+                                                    model: blocks,
+                                                    attributes: [
+                                                        'block_id',
+                                                        'block_name',
+                                                        'block_name_vernacular'
+                                                    ],
+                                                    include: {
+                                                        model: districts,
+                                                        attributes: [
+                                                            'district_id',
+                                                            'district_name',
+                                                            'district_name_vernacular',
+                                                            'district_headquarters',
+                                                            'district_headquarters_vernacular'
+                                                        ],
+                                                        include: {
+                                                            model: states,
+                                                            attributes: [
+                                                                'state_id',
+                                                                'state_name',
+                                                                'state_name_vernacular'
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            model: institution_types,
+                                            attributes: [
+                                                'institution_type_id',
+                                                'institution_type'
+                                            ]
+                                        }
                                     ]
                                 }
+
+                            },
+                        },
+                        {
+                            model: streams,
+                            attributes: [
+                                "stream_id",
+                                "stream_name",
+                                "stream_short_form"
+                            ]
+                        }
+                    ],
+                });
+            } else {
+                try {
+                    const responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
+                        attributes: [
+                            'student_full_name',
+                            'date_of_birth',
+                            'mobile',
+                            'email',
+                            'Gender',
+                            'Age',
+                            'year_of_study'
+                        ],
+                        where: {
+                            [Op.and]: [
+                                whereClauseStatusPart,
+                                // condition,
+                                stateFilter.whereClause
+                            ]
+                        },
+                        include: {
+                            model: mentor,
+                            attributes: [
+                                'mentor_name',
+                                'gender',
+                                'mentor_mobile'
+                            ],
+                            include:
+                            {
+                                model: institutions,
+                                attributes: [
+                                    "institution_id",
+                                    "institution_code",
+                                    "institution_name",
+                                    "institution_name_vernacular"
+                                ],
+                                include: [
+                                    {
+                                        model: places,
+                                        attributes: [
+                                            'place_id',
+                                            'place_type',
+                                            'place_name',
+                                            'place_name_vernacular'
+                                        ],
+                                        include: {
+                                            model: taluks,
+                                            attributes: [
+                                                'taluk_id',
+                                                'taluk_name',
+                                                'taluk_name_vernacular'
+
+                                            ],
+                                            include: {
+                                                model: blocks,
+                                                attributes: [
+                                                    'block_id',
+                                                    'block_name',
+                                                    'block_name_vernacular'
+                                                ],
+                                                include: {
+                                                    model: districts,
+                                                    attributes: [
+                                                        'district_id',
+                                                        'district_name',
+                                                        'district_name_vernacular',
+                                                        'district_headquarters',
+                                                        'district_headquarters_vernacular'
+                                                    ],
+                                                    include: {
+                                                        model: states,
+                                                        attributes: [
+                                                            'state_id',
+                                                            'state_name',
+                                                            'state_name_vernacular'
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    {
+                                        model: institution_types,
+                                        attributes: [
+                                            'institution_type_id',
+                                            'institution_type'
+                                        ]
+                                    }
+                                ]
                             }
+
                         }, limit, offset
                     });
                     const result = this.getPagingData(responseOfFindAndCountAll, page, limit);
@@ -241,8 +342,8 @@ export default class StudentController extends BaseController {
         }
     }
     protected async updateData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             const { model, id } = req.params;
@@ -250,7 +351,7 @@ export default class StudentController extends BaseController {
                 this.model = model;
             };
             const user_id = res.locals.user_id
-            const newParamId :any = await this.authService.decryptGlobal(req.params.id);
+            const newParamId: any = await this.authService.decryptGlobal(req.params.id);
             const studentTableDetails = await student.findOne(
                 {
                     where: {
@@ -268,34 +369,31 @@ export default class StudentController extends BaseController {
             const where: any = {};
             where[`${this.model}_id`] = JSON.parse(newParamId);
             const modelLoaded = await this.loadModel(model);
+            req.body['full_name'] = req.body.student_full_name;
             const payload = this.autoFillTrackingColumns(req, res, modelLoaded);
             if (req.body.username) {
-                    const usernameforpass = req.body.username.split('@');
-                    const studentPassword = usernameforpass[0];
-                    const cryptoEncryptedString = await this.authService.generateCryptEncryption(studentPassword);
-                    const username = req.body.username;
-                    payload['qualification'] = cryptoEncryptedString
-                    payload['UUID'] = studentPassword;
-                    const studentDetails = await this.crudService.findOne(user, { where: { username: username } });
-                    // console.log(studentDetails);
+                const cryptoEncryptedString = await this.authService.generateCryptEncryption(req.body.username);
+                const username = req.body.username;
+                const studentDetails = await this.crudService.findOne(user, { where: { username: username } });
+                // console.log(studentDetails);
 
-                    if (studentDetails) {
-                        if (studentDetails.dataValues.username == username) throw badRequest(speeches.USER_EMAIL_EXISTED);
-                        if (studentDetails instanceof Error) throw studentDetails;
-                    };
-                    const user_data = await this.crudService.update(user, {
-                        full_name: payload.full_name,
-                        username: username,
-                        password: await bcrypt.hashSync(cryptoEncryptedString, process.env.SALT || baseConfig.SALT),
-                    }, { where: { user_id: studentTableDetails.getDataValue("user_id") } });
-                    if (!user_data) {
-                        throw internal()
-                    }
-                    if (user_data instanceof Error) {
-                        throw user_data;
-                    }
+                if (studentDetails) {
+                    if (studentDetails.dataValues.username == username) throw badRequest(speeches.USER_EMAIL_EXISTED);
+                    if (studentDetails instanceof Error) throw studentDetails;
+                };
+                const user_data = await this.crudService.update(user, {
+                    full_name: payload.full_name,
+                    username: username,
+                    password: await bcrypt.hashSync(cryptoEncryptedString, process.env.SALT || baseConfig.SALT),
+                }, { where: { user_id: studentTableDetails.getDataValue("user_id") } });
+                if (!user_data) {
+                    throw internal()
+                }
+                if (user_data instanceof Error) {
+                    throw user_data;
+                }
             }
-            if (req.body.full_name) {
+            if (req.body.student_full_name) {
                 const user_data = await this.crudService.update(user, {
                     full_name: payload.full_name
                 }, { where: { user_id: studentTableDetails.getDataValue("user_id") } });
@@ -320,8 +418,8 @@ export default class StudentController extends BaseController {
         }
     }
     protected async deleteData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             const { model, id } = req.params;
@@ -343,10 +441,17 @@ export default class StudentController extends BaseController {
     private async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             // const randomGeneratedSixDigitID = this.nanoid();
-            const { team_id ,username} = req.body;
-            const usernameforpass = username.split('@');
-            const studentPassword = usernameforpass[0];
-            const cryptoEncryptedString = await this.authService.generateCryptEncryption(studentPassword);
+            const { team_id, username, mentor_id } = req.body;
+            if (mentor_id) {
+                const countvalue = await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${mentor_id};`, { type: QueryTypes.SELECT });
+                const totalValue = Object.values(countvalue[0]).toString()
+                if (JSON.parse(totalValue) > 50) {
+                    throw badRequest(speeches.STUDENT_MAX)
+                }
+            }
+            const cryptoEncryptedString = await this.authService.generateCryptEncryption(username);
+            req.body['full_name'] = req.body.student_full_name;
+            req.body['financial_year_id'] = 1;
             if (!req.body.role || req.body.role !== 'STUDENT') return res.status(406).send(dispatcher(res, null, 'error', speeches.USER_ROLE_REQUIRED, 406));
             if (!req.body.team_id) return res.status(406).send(dispatcher(res, null, 'error', speeches.USER_TEAMID_REQUIRED, 406));
             if (team_id) {
@@ -360,9 +465,6 @@ export default class StudentController extends BaseController {
             }
             const teamDetails = await this.authService.crudService.findOne(team, { where: { team_id } });
             if (!teamDetails) return res.status(406).send(dispatcher(res, null, 'error', speeches.TEAM_NOT_FOUND, 406));
-            else
-                req.body['UUID'] = studentPassword;
-                req.body.qualification = cryptoEncryptedString // saving the encrypted text in the qualification as for now just for debugging
 
             if (!req.body.password || req.body.password === "") req.body.password = cryptoEncryptedString;
             const payload = this.autoFillTrackingColumns(req, res, student)
@@ -381,6 +483,14 @@ export default class StudentController extends BaseController {
             for (let student in req.body) {
                 if (!req.body[student].team_id) throw notFound(speeches.USER_TEAMID_REQUIRED);
                 const team_id = req.body[student].team_id
+                const mentor_id = req.body[student].mentor_id
+                if (mentor_id) {
+                    const countvalue = await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${mentor_id};`, { type: QueryTypes.SELECT });
+                    const totalValue = Object.values(countvalue[0]).toString()
+                    if (JSON.parse(totalValue) > 47) {
+                        throw badRequest(speeches.STUDENT_MAX)
+                    }
+                }
                 if (team_id) {
                     const teamCanAddMember = await this.authService.checkIfTeamHasPlaceForNewMember(team_id)
                     if (!teamCanAddMember) {
@@ -391,8 +501,6 @@ export default class StudentController extends BaseController {
                     }
                 }
             }
-            let usernameforpass: any; 
-            let studentPassword: any;
             let cryptoEncryptedString: any;
             const teamName = await this.authService.crudService.findOne(team, {
                 attributes: ["team_name"], where: { team_id: req.body[0].team_id }
@@ -400,18 +508,15 @@ export default class StudentController extends BaseController {
             if (!teamName) throw notFound(speeches.TEAM_NOT_FOUND, 406);
             if (teamName instanceof Error) throw teamName;
             for (let student in req.body) {
-                const usernameforpass = req.body[student].username.split('@');
-                studentPassword = usernameforpass[0];
-                cryptoEncryptedString = await this.authService.generateCryptEncryption(studentPassword);
-                req.body[student].full_name = req.body[student].full_name.trim();
+                cryptoEncryptedString = await this.authService.generateCryptEncryption(req.body[student].username);
+                req.body[student].student_full_name = req.body[student].student_full_name.trim();
+                req.body[student].full_name = req.body[student].student_full_name.trim();
+                req.body[student].financial_year_id = 1;
                 req.body[student].role = 'STUDENT';
-                req.body[student].UUID = studentPassword;
                 req.body[student].password = cryptoEncryptedString;
-                req.body[student].qualification = cryptoEncryptedString; // password filed will hashed further by the backend system hence we saving the encrypted text in the qualification filed as for now just for debugging
                 req.body[student].created_by = res.locals.user_id
                 req.body[student].updated_by = res.locals.user_id
             }
-            // console.log(req.body);
             const responseFromService = await this.authService.bulkCreateStudentService(req.body);
             // if (responseFromService.error) return res.status(406).send(dispatcher(res, responseFromService.error, 'error', speeches.STUDENT_EXISTS, 406));
             return res.status(201).send(dispatcher(res, responseFromService, 'success', speeches.USER_REGISTERED_SUCCESSFULLY, 201));
@@ -444,7 +549,7 @@ export default class StudentController extends BaseController {
             const mentorData = await this.authService.crudService.findOne(mentor, {
                 where: { mentor_id: teamDetails.dataValues.mentor_id },
                 include: {
-                    model: organization
+                    model: institutions
                 }
             });
             if (!mentorData || mentorData instanceof Error) {
@@ -453,9 +558,23 @@ export default class StudentController extends BaseController {
             if (mentorData.dataValues.reg_status !== '3') {
                 return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_REG_STATUS));
             }
-            result.data['organization_name'] = mentorData.dataValues.organization.organization_name;
-            result.data['district'] = mentorData.dataValues.organization.district;
-            result.data['state'] = mentorData.dataValues.organization.state;
+            const valueDis = await db.query(`SELECT 
+                district_name
+            FROM
+                districts AS d
+                    JOIN
+                blocks AS b ON d.district_id = b.district_id
+                    JOIN
+                taluks AS t ON b.block_id = t.block_id
+                    JOIN
+                places AS p ON t.taluk_id = p.taluk_id
+                    JOIN
+                institutions AS ins ON p.place_id = ins.place_id
+            WHERE
+                institution_id = ${mentorData.dataValues.institution.dataValues.institution_id};`, { type: QueryTypes.SELECT });
+            result.data['institution_name'] = mentorData.dataValues.institution.dataValues.institution_name;
+            result.data['district'] = Object.values(valueDis[0]).toString()
+            // result.data['state'] = mentorData.dataValues.organization.state;
             return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
         }
     }
@@ -468,8 +587,8 @@ export default class StudentController extends BaseController {
         }
     }
     private async changePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         const result = await this.authService.changePassword(req.body, res);
         if (!result) {
@@ -484,8 +603,8 @@ export default class StudentController extends BaseController {
         }
     }
     private async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'STATE' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         // accept the user_id or user_name from the req.body and update the password in the user table
         // perviously while student registration changes we have changed the password is changed to random generated UUID and stored and send in the payload,
@@ -495,13 +614,10 @@ export default class StudentController extends BaseController {
         if (!user_id) throw badRequest(speeches.USER_USERID_REQUIRED);
         const findUser: any = await this.crudService.findOne(user, { where: { user_id } });
         if (!findUser) throw badRequest(speeches.USER_NOT_FOUND);
-        if (findUser instanceof Error) throw findUser; 
-        const usernameforpass = findUser.dataValues.username.split('@');
-        const studentPassword = usernameforpass[0];
-        const cryptoEncryptedString = await this.authService.generateCryptEncryption(studentPassword);
+        if (findUser instanceof Error) throw findUser;
+        const cryptoEncryptedString = await this.authService.generateCryptEncryption(findUser.dataValues.username);
         try {
             req.body['username'] = findUser.dataValues.username;
-            req.body['UUID'] = studentPassword;
             req.body['encryptedString'] = cryptoEncryptedString;
             const result = await this.authService.studentResetPassword(req.body);
             if (!result) return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_NOT_FOUND));
@@ -521,105 +637,105 @@ export default class StudentController extends BaseController {
         //     return res.status(202).send(dispatcher(res, result, 'accepted', speeches.USER_PASSWORD_CHANGE, 202));
         // }
     }
-    private async addBadgeToStudent(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
-        }
-        try {
-            //todo: test this api : haven't manually tested this api yet 
-            const student_user_id: any = await this.authService.decryptGlobal(req.params.student_user_id);
-            const badges_ids: any = req.body.badge_ids;
-            const badges_slugs: any = req.body.badge_slugs;
-            let areSlugsBeingUsed = true;
-            if (!badges_slugs || !badges_slugs.length || badges_slugs.length <= 0) {
-                areSlugsBeingUsed = false;
-            }
+    // private async addBadgeToStudent(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    //     if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
+    //         return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+    //     }
+    //     try {
+    //         //todo: test this api : haven't manually tested this api yet 
+    //         const student_user_id: any = await this.authService.decryptGlobal(req.params.student_user_id);
+    //         const badges_ids: any = req.body.badge_ids;
+    //         const badges_slugs: any = req.body.badge_slugs;
+    //         let areSlugsBeingUsed = true;
+    //         if (!badges_slugs || !badges_slugs.length || badges_slugs.length <= 0) {
+    //             areSlugsBeingUsed = false;
+    //         }
 
-            if (!areSlugsBeingUsed && (!badges_ids || !badges_ids.length || badges_ids.length <= 0)) {
-                throw badRequest(speeches.BADGE_IDS_ARRAY_REQUIRED)
-            }
+    //         if (!areSlugsBeingUsed && (!badges_ids || !badges_ids.length || badges_ids.length <= 0)) {
+    //             throw badRequest(speeches.BADGE_IDS_ARRAY_REQUIRED)
+    //         }
 
-            const serviceStudent = new StudentService()
-            let studentBadgesObj: any = await serviceStudent.getStudentBadges(student_user_id);
-            ///do not do empty or null check since badges obj can be null if no badges earned yet hence this is not an error condition 
-            if (studentBadgesObj instanceof Error) {
-                throw studentBadgesObj
-            }
-            if (!studentBadgesObj) {
-                studentBadgesObj = {};
-            }
-            const success: any = []
-            const errors: any = []
+    //         const serviceStudent = new StudentService()
+    //         let studentBadgesObj: any = await serviceStudent.getStudentBadges(student_user_id);
+    //         ///do not do empty or null check since badges obj can be null if no badges earned yet hence this is not an error condition 
+    //         if (studentBadgesObj instanceof Error) {
+    //             throw studentBadgesObj
+    //         }
+    //         if (!studentBadgesObj) {
+    //             studentBadgesObj = {};
+    //         }
+    //         const success: any = []
+    //         const errors: any = []
 
-            let forLoopArr = badges_slugs;
+    //         let forLoopArr = badges_slugs;
 
-            if (!areSlugsBeingUsed) {
-                forLoopArr = badges_ids
-            }
+    //         if (!areSlugsBeingUsed) {
+    //             forLoopArr = badges_ids
+    //         }
 
-            for (var i = 0; i < forLoopArr.length; i++) {
-                let badgeId = forLoopArr[i];
-                let badgeFindWhereClause: any = {
-                    slug: badgeId
-                }
-                if (!areSlugsBeingUsed) {
-                    badgeFindWhereClause = {
-                        badge_id: badgeId
-                    }
-                }
-                const badgeResultForId = await this.crudService.findOne(badge, { where: badgeFindWhereClause })
-                if (!badgeResultForId) {
-                    errors.push({ id: badgeId, err: badRequest(speeches.DATA_NOT_FOUND) })
-                    continue;
-                }
-                if (badgeResultForId instanceof Error) {
-                    errors.push({ id: badgeId, err: badgeResultForId })
-                    continue;
-                }
+    //         for (var i = 0; i < forLoopArr.length; i++) {
+    //             let badgeId = forLoopArr[i];
+    //             let badgeFindWhereClause: any = {
+    //                 slug: badgeId
+    //             }
+    //             if (!areSlugsBeingUsed) {
+    //                 badgeFindWhereClause = {
+    //                     badge_id: badgeId
+    //                 }
+    //             }
+    //             const badgeResultForId = await this.crudService.findOne(badge, { where: badgeFindWhereClause })
+    //             if (!badgeResultForId) {
+    //                 errors.push({ id: badgeId, err: badRequest(speeches.DATA_NOT_FOUND) })
+    //                 continue;
+    //             }
+    //             if (badgeResultForId instanceof Error) {
+    //                 errors.push({ id: badgeId, err: badgeResultForId })
+    //                 continue;
+    //             }
 
-                const date = new Date();
-                const studentHasBadgeObjForId = studentBadgesObj[badgeResultForId.dataValues.slug]
-                if (!studentHasBadgeObjForId || !studentHasBadgeObjForId.completed_date) {
-                    studentBadgesObj[badgeResultForId.dataValues.slug] = {
-                        completed_date: (new Date())
-                        // completed_date: ("" + date.getFullYear() + "-" + "" + (date.getMonth() + 1) + "-" + "" + date.getDay())
-                    }
-                }
-            }
-            const studentBadgesObjJson = JSON.stringify(studentBadgesObj)
-            const result: any = await student.update({ badges: studentBadgesObjJson }, {
-                where: {
-                    user_id: student_user_id
-                }
-            })
-            if (result instanceof Error) {
-                throw result;
-            }
+    //             const date = new Date();
+    //             const studentHasBadgeObjForId = studentBadgesObj[badgeResultForId.dataValues.slug]
+    //             if (!studentHasBadgeObjForId || !studentHasBadgeObjForId.completed_date) {
+    //                 studentBadgesObj[badgeResultForId.dataValues.slug] = {
+    //                     completed_date: (new Date())
+    //                     // completed_date: ("" + date.getFullYear() + "-" + "" + (date.getMonth() + 1) + "-" + "" + date.getDay())
+    //                 }
+    //             }
+    //         }
+    //         const studentBadgesObjJson = JSON.stringify(studentBadgesObj)
+    //         const result: any = await student.update({ badges: studentBadgesObjJson }, {
+    //             where: {
+    //                 user_id: student_user_id
+    //             }
+    //         })
+    //         if (result instanceof Error) {
+    //             throw result;
+    //         }
 
-            if (!result) {
-                return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_NOT_FOUND));
-            }
-            let dispatchStatus = "updated"
-            let resStatus = 202
-            let dispatchStatusMsg = speeches.USER_BADGES_LINKED
-            if (errors && errors.length > 0) {
-                dispatchStatus = "error"
-                dispatchStatusMsg = "error"
-                resStatus = 400
-            }
+    //         if (!result) {
+    //             return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_NOT_FOUND));
+    //         }
+    //         let dispatchStatus = "updated"
+    //         let resStatus = 202
+    //         let dispatchStatusMsg = speeches.USER_BADGES_LINKED
+    //         if (errors && errors.length > 0) {
+    //             dispatchStatus = "error"
+    //             dispatchStatusMsg = "error"
+    //             resStatus = 400
+    //         }
 
-            return res.status(resStatus).send(dispatcher(res, { errs: errors, success: studentBadgesObj }, dispatchStatus, dispatchStatusMsg, resStatus));
-        } catch (err) {
-            next(err)
-        }
-    }
+    //         return res.status(resStatus).send(dispatcher(res, { errs: errors, success: studentBadgesObj }, dispatchStatus, dispatchStatusMsg, resStatus));
+    //     } catch (err) {
+    //         next(err)
+    //     }
+    // }
     private async getStudentBadges(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         //todo: implement this api ...!!
         try {
-            const student_user_id : any = await this.authService.decryptGlobal(req.params.student_user_id);
+            const student_user_id: any = await this.authService.decryptGlobal(req.params.student_user_id);
             const serviceStudent = new StudentService()
             let studentBadgesObj: any = await serviceStudent.getStudentBadges(student_user_id);
             ///do not do empty or null check since badges obj can be null if no badges earned yet hence this is not an error condition 
@@ -630,12 +746,12 @@ export default class StudentController extends BaseController {
                 studentBadgesObj = {};
             }
             const studentBadgesObjKeysArr = Object.keys(studentBadgesObj)
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
             const paramStatus: any = newREQQuery.status;
             const where: any = {};
@@ -679,8 +795,8 @@ export default class StudentController extends BaseController {
         }
     }
     private async studentPasswordUpdate(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             let count: any = 0;
@@ -703,15 +819,15 @@ export default class StudentController extends BaseController {
         }
     }
     private async studentCertificate(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            let newREParams : any = {};
-            if(req.params){
-                const newParams : any = await this.authService.decryptGlobal(req.params);
+            let newREParams: any = {};
+            if (req.params) {
+                const newParams: any = await this.authService.decryptGlobal(req.params);
                 newREParams = JSON.parse(newParams);
-            }else {
+            } else {
                 newREParams = req.params
             }
             const { model, student_user_id } = newREParams;
@@ -739,11 +855,11 @@ export default class StudentController extends BaseController {
         }
     }
     private async stuIdeaSubmissionEmail(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            const { mentor_id,team_id,team_name,title} = req.body;
+            const { mentor_id, team_id, team_name, title } = req.body;
             let data: any = {}
             const contentText = `
             <body style="border: solid;margin-right: 15%;margin-left: 15%; ">
@@ -783,27 +899,27 @@ export default class StudentController extends BaseController {
                 WHERE
                     s.team_id = ${team_id}
             ) AS combined_usernames;`, { type: QueryTypes.SELECT });
-           data= summary;
+            data = summary;
             const usernameArray = data[0].all_usernames;
             let arrayOfUsernames = usernameArray.split(', ');
-            const result = await this.authService.triggerBulkEmail(arrayOfUsernames,contentText,subject);
-            
+            const result = await this.authService.triggerBulkEmail(arrayOfUsernames, contentText, subject);
+
             return res.status(200).send(dispatcher(res, result, 'Email sent'));
         } catch (error) {
             next(error);
         }
     }
 }
-        // private async updatePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        //     const result = await this.authService.updatePassword(req.body, res);
-        //     if (!result) {
-        //         return res.status(404).send(dispatcher(res,null, 'error', speeches.USER_NOT_FOUND));
-        //     } else if (result.error) {
-        //         return res.status(404).send(dispatcher(res,result.error, 'error', result.error));
-        //     }
-        //     else if (result.match) {
-        //         return res.status(404).send(dispatcher(res,null, 'error', speeches.USER_PASSWORD));
-        //     } else {
-        //         return res.status(202).send(dispatcher(res,result.data, 'accepted', speeches.USER_PASSWORD_CHANGE, 202));
-        //     }
-        // }
+// private async updatePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+//     const result = await this.authService.updatePassword(req.body, res);
+//     if (!result) {
+//         return res.status(404).send(dispatcher(res,null, 'error', speeches.USER_NOT_FOUND));
+//     } else if (result.error) {
+//         return res.status(404).send(dispatcher(res,result.error, 'error', result.error));
+//     }
+//     else if (result.match) {
+//         return res.status(404).send(dispatcher(res,null, 'error', speeches.USER_PASSWORD));
+//     } else {
+//         return res.status(202).send(dispatcher(res,result.data, 'accepted', speeches.USER_PASSWORD_CHANGE, 202));
+//     }
+// }

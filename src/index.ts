@@ -43,6 +43,9 @@ import ResourceController from "./controllers/resource.controller";
 import LatestNewsController from "./controllers/latest_news.controller";
 import StateController from "./controllers/state.controller";
 import popupController from "./controllers/popup.controller";
+import institutionsController  from "./controllers/institutions.controller";
+import ideasController from "./controllers/ideas.controller";
+import themes_problemsController from "./controllers/themes_problems.controller";
 
 // validating env variables
 validateEnv();
@@ -91,7 +94,10 @@ try {
         new ResourceController,
         new LatestNewsController,
         new StateController,
-        new popupController
+        new popupController,
+        new institutionsController ,
+        new ideasController,
+        new themes_problemsController
     ], Number(process.env.APP_PORT));
     // starting app
     app.listen();

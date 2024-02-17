@@ -3,10 +3,9 @@ name: Deployment
 
 on:
   push:
-    branches: master
-
+    branches: development
 jobs:
-  #First we will see the application build or not , then we will deploy in EC2
+  
   Build:
     runs-on: ubuntu-latest
 
@@ -14,7 +13,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get install -y sshpass
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install
         run: npm i -f
@@ -31,13 +30,11 @@ jobs:
         if: github.ref == 'refs/heads/master'
         env:
           PRIVATE_KEY: ${{ secrets.NT_PRIVATE_KEY }}
-          HOSTNAME: ${{ secrets.NT_DEV_HOSTNAME }}
-          UNAME: ${{ secrets.UNAME }}
-          PWD: ${{ secrets.PWD }}
+          HOSTNAME: ${{ secrets.DEV_HOSTNAME }}
         run: |
-          /usr/bin/sshpass "${{ secrets.PWD }}"  ssh -o StrictHostKeyChecking=no sdcusr@${{secrets.UNAME}} '
-      
-            cd var/www/html/aim_be &&
+          echo "$PRIVATE_KEY" > private_key && chmod 400 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ubuntu@${{secrets.DEV_HOSTNAME}} '
+            cd /home/ubuntu/aim_be &&
             git checkout development &&
             git pull origin development &&
             npm i -f && NODE_OPTIONS="--max-old-space-size=1024" npm run build && npm run start:prod && pm2 save -f'

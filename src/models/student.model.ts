@@ -5,26 +5,22 @@ import db from '../utils/dbconnection.util';
 import { notification } from './notification.model';
 import { baseConfig } from '../configs/base.config';
 import { user } from './user.model';
+import { streams } from './streams.model';
 
 export class student extends Model<InferAttributes<student>, InferCreationAttributes<student>> {
     declare student_id: CreationOptional<number>;
-    declare UUID: string;
+    declare stream_id: number;
+    declare year_of_study: number;
+    declare financial_year_id: number;
     declare user_id: number;
-    declare team_id: string;
-    declare full_name: string;
+    declare team_id: number;
+    declare student_full_name: string;
     declare date_of_birth: Date;
-    declare qualification: string;
-    declare institute_name: string;
-    declare Age: number;
-    declare Grade: string;
+    declare mobile: string;
+    declare email: string;
     declare Gender: string;
-    declare city: string;
-    declare district: string;
-    declare state: string;
-    declare country: string;
-    declare badges: string;
-    declare disability: string;
-    declare certificate: number;
+    declare Age: number;
+    declare certificate_issued: Date;
     declare status: Enumerator;
     declare created_by: number;
     declare created_at: Date;
@@ -48,17 +44,23 @@ student.init(
             autoIncrement: true,
             primaryKey: true,
         },
+        stream_id: {
+            type: DataTypes.INTEGER
+        },
+        year_of_study: {
+            type: DataTypes.INTEGER
+        },
+        financial_year_id: {
+            type: DataTypes.INTEGER
+        },
         user_id: {
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        UUID: {
-            type: DataTypes.STRING,
-        },
         team_id: {
-            type: DataTypes.STRING,
+            type: DataTypes.INTEGER
         },
-        full_name: {
+        student_full_name: {
             type: DataTypes.STRING,
             allowNull: false,
         },
@@ -66,19 +68,11 @@ student.init(
             type: DataTypes.DATE,
             allowNull: true
         },
-        institute_name: {
+        mobile: {
             type: DataTypes.STRING,
             allowNull: true,
         },
-        qualification: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        Age: {
-            type: DataTypes.INTEGER,
-            allowNull: true
-        },
-        Grade: {
+        email: {
             type: DataTypes.STRING,
             allowNull: true
         },
@@ -86,32 +80,18 @@ student.init(
             type: DataTypes.ENUM(...Object.values(constents.gender_flags.list)),
             defaultValue: constents.gender_flags.default
         },
-        city: {
-            type: DataTypes.STRING
+        Age: {
+            type: DataTypes.INTEGER,
+            allowNull: true
         },
-        district: {
-            type: DataTypes.STRING
-        },
-        state: {
-            type: DataTypes.STRING
-        },
-        country: {
-            type: DataTypes.STRING
-        },
-        disability: {
-            type: DataTypes.STRING
-        },
-        badges: {
-            type: DataTypes.TEXT('long')
+        certificate_issued: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null
         },
         status: {
             type: DataTypes.ENUM(...Object.values(constents.common_status_flags.list)),
             defaultValue: constents.common_status_flags.default
-        },
-        certificate: {
-            type: DataTypes.DATE,
-            allowNull: true,
-            defaultValue: null
         },
         created_at: {
             type: DataTypes.DATE,
@@ -162,3 +142,5 @@ student.belongsTo(user, { foreignKey: 'user_id' });
 user.hasMany(student, { foreignKey: 'user_id' });
 student.belongsTo(user, { foreignKey: 'user_id' });
 user.hasMany(student, { foreignKey: 'user_id' });
+student.belongsTo(streams, {targetKey: 'stream_id',foreignKey: 'stream_id', constraints: false });
+streams.hasOne(student, { sourceKey: 'stream_id', foreignKey: 'stream_id', constraints: false });
