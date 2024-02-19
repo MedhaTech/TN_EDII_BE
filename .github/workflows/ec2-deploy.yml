@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Deploy to Development
-        if: github.ref == 'refs/heads/development;'
+        if: github.ref == 'refs/heads/development'
         env:
           PRIVATE_KEY: ${{ secrets.NT_PRIVATE_KEY }}
           HOSTNAME: ${{ secrets.DEV_HOSTNAME }}
