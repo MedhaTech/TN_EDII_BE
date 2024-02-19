@@ -11,6 +11,8 @@ import fs from 'fs';
 import { S3 } from "aws-sdk";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import db from "../utils/dbconnection.util";
+import { evaluation_process } from "../models/evaluation_process.model";
+import { constents } from "../configs/constents.config";
 
 export default class ideasController extends BaseController {
 
@@ -26,6 +28,7 @@ export default class ideasController extends BaseController {
         this.router.get(this.path + '/submittedDetails', this.getResponse.bind(this));
         this.router.post(this.path + "/fileUpload", this.handleAttachment.bind(this));
         this.router.get(`${this.path}/ideastatusbyteamId`, this.getideastatusbyteamid.bind(this));
+        this.router.get(this.path + '/fetchRandomChallenge', this.getRandomChallenge.bind(this));
         super.initializeRoutes();
     }
     protected async initiateIdeaop(req: Request, res: Response, next: NextFunction) {
@@ -274,6 +277,139 @@ export default class ideasController extends BaseController {
             const teamId = newREQQuery.team_id;
             const result = await db.query(`select  ifnull((select status  FROM ideas where team_id = ${teamId}),'No Idea')ideaStatus`, { type: QueryTypes.SELECT });
             res.status(200).send(dispatcher(res, result, "success"))
+        } catch (error) {
+            next(error);
+        }
+    }
+    protected async getRandomChallenge(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'EVALUATOR'){
+            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        }
+        try {
+            let challengeResponse: any;
+            let evaluator_id: any;
+            let whereClause: any = {};
+            let whereClauseStatusPart: any = {}
+            let attributesNeedFetch: any;
+            let newREQQuery : any = {}
+            if(req.query.Data){
+                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery  = JSON.parse(newQuery);
+            }else if(Object.keys(req.query).length !== 0){
+                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            }
+
+            let user_id = res.locals.user_id;
+            if (!user_id) throw unauthorized(speeches.UNAUTHORIZED_ACCESS);
+
+            let evaluator_user_id = newREQQuery.evaluator_user_id;
+            if (!evaluator_user_id) throw unauthorized(speeches.ID_REQUIRED);
+
+            let activeDistrict = await this.crudService.findOne(evaluation_process, {
+                attributes: ['district'], where: { [Op.and]: [{ status: 'ACTIVE' }, { level_name: 'L1' }] }
+            });
+            let districts = activeDistrict.dataValues.district;
+            const convertToDistrictArray = districts.split(",");
+            const paramStatus: any = newREQQuery.status;
+            let boolStatusWhereClauseRequired = false;
+
+            if (paramStatus && (paramStatus in constents.challenges_flags.list)) {
+                whereClauseStatusPart = { "status": paramStatus ,district : {[Op.in]: convertToDistrictArray} };
+                boolStatusWhereClauseRequired = true;
+            } else {
+                whereClauseStatusPart = { "status": "SUBMITTED",district : {[Op.in]: convertToDistrictArray} };
+                boolStatusWhereClauseRequired = true;
+            };
+
+            evaluator_id = { evaluated_by: evaluator_user_id }
+
+            let level = newREQQuery.level;
+            if (level && typeof level == 'string') {
+                let districtsArray = districts.replace(/,/g, "','")
+                switch (level) {
+                    case 'L1':
+                        attributesNeedFetch = [
+                            "idea_id",
+                            "financial_year_id",
+                            "theme_problem_id",
+                            "team_id",
+                            "idea_title",
+                            "solution_statement",
+                            "detailed_solution",
+                            "prototype_available",
+                            "Prototype_file",
+                            "idea_available",
+                            "self_declaration",
+                            "status",
+                            "initiated_by",
+                            "submitted_at",
+                            "created_by",
+                            "created_at",
+                            "verified_by",
+                            "verified_at",
+                            "district",
+                            [
+                                db.literal(`( SELECT count(*) FROM ideas as idea where idea.verified_by <> 'null')`),
+                                'overAllIdeas'
+                            ],
+                            [
+                                db.literal(`(SELECT count(*) FROM ideas as idea where idea.evaluation_status is null AND idea.verified_by <> 'null' AND idea.district IN ('${districtsArray}'))`),
+                                'openIdeas'
+                            ],
+                            [
+                                db.literal(`(SELECT count(*) FROM ideas as idea where idea.evaluated_by = ${evaluator_user_id.toString()})`), 'evaluatedIdeas'
+                            ],
+                        ],
+                            whereClause = {
+                                [Op.and]: [
+                                    whereClauseStatusPart,
+                                    { evaluation_status: { [Op.is]: null } },
+                                    { verified_by : { [Op.ne]: null } }
+
+                                ]
+                            }
+                        challengeResponse = await this.crudService.findOne(ideas, {
+                            attributes: attributesNeedFetch,
+                            where: whereClause,
+                            order: db.literal('rand()'), limit: 1
+                        });
+                        if (challengeResponse instanceof Error) {
+                            throw challengeResponse
+                        }
+                        if (!challengeResponse) {
+                            throw notFound("All ideas has been accepted, no more challenge to display");
+                        };
+                        break;
+                    case 'L2':
+                        let activeDistrict = await this.crudService.findOne(evaluation_process, {
+                            attributes: ['district'], where: { [Op.and]: [{ status: 'ACTIVE' }, { level_name: 'L2' }] }
+                        });
+                        let districts = activeDistrict.dataValues.district;
+                        if (districts !== null) {
+                            let districtsArray = districts.replace(/,/g, "','")
+                            challengeResponse = await db.query("SELECT ideas.idea_id, ideas.theme_problem_id, ideas.idea_title, ideas.team_id, ideas.solution_statement, ideas.detailed_solution, ideas.prototype_available, ideas.Prototype_file, ideas.idea_available, ideas.self_declaration, ideas.initiated_by, ideas.created_at, ideas.submitted_at, ideas.status, ideas.district, ideas.verified_by, (SELECT COUNT(*) FROM ideas AS idea WHERE idea.evaluation_status = 'SELECTEDROUND1') AS 'overAllIdeas', (SELECT COUNT(*) - SUM(CASE WHEN FIND_IN_SET('" + evaluator_user_id.toString() + "', evals) > 0 THEN 1 ELSE 0 END) FROM l1_accepted WHERE l1_accepted.district IN ('" + districtsArray + "')) AS 'openIdeas', (SELECT COUNT(*) FROM evaluator_ratings AS A WHERE A.evaluator_id = '" + evaluator_user_id.toString() + "') AS 'evaluatedIdeas' FROM l1_accepted AS l1_accepted LEFT OUTER JOIN ideas ON l1_accepted.idea_id = ideas.idea_id WHERE l1_accepted.district IN ('" + districtsArray + "') AND NOT FIND_IN_SET('" + evaluator_user_id.toString() + "', l1_accepted.evals) ORDER BY RAND() LIMIT 1", { type: QueryTypes.SELECT });
+                        } else {
+                            challengeResponse = await db.query(`SELECT ideas.idea_id, ideas.theme_problem_id, ideas.idea_title, ideas.team_id, ideas.solution_statement, ideas.detailed_solution, ideas.prototype_available, ideas.Prototype_file, ideas.idea_available, ideas.self_declaration, ideas.initiated_by, ideas.created_at, ideas.submitted_at, ideas.status, ideas.district, ideas.verified_by, (SELECT COUNT(*) FROM ideas AS idea WHERE idea.evaluation_status = 'SELECTEDROUND1') AS 'overAllIdeas', (SELECT COUNT(*) - SUM(CASE WHEN FIND_IN_SET(${evaluator_user_id.toString()}, evals) > 0 THEN 1 ELSE 0 END) FROM l1_accepted) AS 'openIdeas', (SELECT COUNT(*) FROM evaluator_ratings AS A WHERE A.evaluator_id = ${evaluator_user_id.toString()}) AS 'evaluatedIdeas' FROM l1_accepted AS l1_accepted LEFT OUTER JOIN ideas ON l1_accepted.idea_id = ideas.idea_id WHERE NOT FIND_IN_SET(${evaluator_user_id.toString()}, l1_accepted.evals) ORDER BY RAND() LIMIT 1`, { type: QueryTypes.SELECT });
+                        }
+                        const evaluatedIdeas = await db.query(`SELECT COUNT(*) as evaluatedIdeas FROM evaluator_ratings AS A WHERE A.evaluator_id = ${evaluator_user_id.toString()}`, { type: QueryTypes.SELECT })
+                        let throwMessage = {
+                            message: 'All ideas has been rated, no more challenge to display',
+                            //@ts-ignore
+                            evaluatedIdeas: evaluatedIdeas[0].evaluatedIdeas
+                        };
+                        if (challengeResponse instanceof Error) {
+                            throw challengeResponse
+                        }
+                        if (challengeResponse.length == 0) {
+                            // throw notFound("All challenge has been rated, no more challenge to display");
+                            return res.status(200).send(dispatcher(res, throwMessage, 'success'));
+                        };
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return res.status(200).send(dispatcher(res, challengeResponse, 'success'));
         } catch (error) {
             next(error);
         }
