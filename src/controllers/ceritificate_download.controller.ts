@@ -38,7 +38,7 @@ export default class CertificateDownloadController extends BaseController {
             if (gettingWithTheHelpOfMobileNumber instanceof Error) {
                 throw gettingWithTheHelpOfMobileNumber;
             };
-            return res.status(200).send(dispatcher(res, gettingWithTheHelpOfMobileNumber, 'verified'));
+            return res.status(200).send(dispatcher(res, gettingWithTheHelpOfMobileNumber, 'verified1'));
         } catch (error) {
             next(error)
         }
