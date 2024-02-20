@@ -103,13 +103,6 @@ export default class authService {
                         }
                     },
                     {
-                        model: institution_types,
-                        attributes: [
-                            'institution_type_id',
-                            'institution_type'
-                        ]
-                    },
-                    {
                         model: institution_principals,
                         attributes: [
                             'institution_principal_id',

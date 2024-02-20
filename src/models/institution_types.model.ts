@@ -1,8 +1,6 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { institutions } from './institutions.model';
-import { streams } from './streams.model';
 
 
 export class institution_types extends Model<InferAttributes<institution_types>, InferCreationAttributes<institution_types>> {
@@ -60,7 +58,3 @@ institution_types.init({
     }
 
 );
-institution_types.belongsTo(institutions, {targetKey: 'institution_type_id',foreignKey: 'institution_type_id', constraints: false });
-institutions.hasOne(institution_types, { sourceKey: 'institution_type_id', foreignKey: 'institution_type_id', constraints: false });
-institution_types.belongsTo(streams, {targetKey: 'institution_type_id',foreignKey: 'institution_type_id', constraints: false });
-streams.hasOne(institution_types, { sourceKey: 'institution_type_id', foreignKey: 'institution_type_id', constraints: false });

@@ -196,13 +196,6 @@ export default class StudentController extends BaseController {
                                                     }
                                                 }
                                             }
-                                        },
-                                        {
-                                            model: institution_types,
-                                            attributes: [
-                                                'institution_type_id',
-                                                'institution_type'
-                                            ]
                                         }
                                     ]
                                 }
@@ -298,13 +291,6 @@ export default class StudentController extends BaseController {
                                                 }
                                             }
                                         }
-                                    },
-                                    {
-                                        model: institution_types,
-                                        attributes: [
-                                            'institution_type_id',
-                                            'institution_type'
-                                        ]
                                     }
                                 ]
                             }

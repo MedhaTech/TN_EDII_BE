@@ -5,7 +5,6 @@ import { constents } from '../configs/constents.config';
 
 export class streams extends Model<InferAttributes<streams>, InferCreationAttributes<streams>> {
     declare stream_id: CreationOptional<number>;
-    declare institution_type_id: number;
     declare stream_name: string;
     declare stream_short_form: string;
     declare status: Enumerator;
@@ -21,9 +20,6 @@ streams.init({
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
-    },
-    institution_type_id: {
-        type: DataTypes.INTEGER
     },
     stream_name: {
         type: DataTypes.STRING,
