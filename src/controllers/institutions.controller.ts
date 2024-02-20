@@ -16,10 +16,7 @@ import { districts } from "../models/districts.model";
 import { states } from "../models/states.model";
 import { institution_types } from "../models/institution_types.model";
 import { institution_principals } from "../models/institution_principals.model";
-import { streams } from "../models/streams.model";
 import db from "../utils/dbconnection.util"
-import { mentor } from "../models/mentor.model";
-import { institutions } from "../models/institutions.model";
 
 export default class institutionsController extends BaseController {
 
@@ -35,10 +32,11 @@ export default class institutionsController extends BaseController {
     protected initializeRoutes(): void {
         this.router.post(`${this.path}/checkOrg`, validationMiddleware(institutionsCheckSchema), this.checkOrgDetails.bind(this));
         this.router.post(`${this.path}/createOrg`, validationMiddleware(institutionsRawSchema), this.createOrg.bind(this));
-        this.router.get(`${this.path}/Streams/:institution_type_id`, this.getStreams.bind(this));
+        this.router.get(`${this.path}/Streams`, this.getStreams.bind(this));
+        this.router.get(`${this.path}/institutionTypes`, this.getInstitutionTypes.bind(this));
+        this.router.get(`${this.path}/programs`, this.getPrograms.bind(this));
         this.router.post(`${this.path}/login`, this.login.bind(this));
         this.router.get(`${this.path}/logout`, this.logout.bind(this));
-        this.router.get(`${this.path}/Mentors`, this.getMentors.bind(this));
 
         super.initializeRoutes();
     };
@@ -209,63 +207,63 @@ export default class institutionsController extends BaseController {
     private async createOrg(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         return this.createData(req, res, next);
     }
-    private async getStreams(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        try {
-            let response: any = [];
-            const deValue: any = await this.authService.decryptGlobal(req.params.institution_type_id);
-            const findUniversity = await this.crudService.findOne(institution_types, {
-                where: { institution_type_id: JSON.parse(deValue) }
-            })
-            if (!findUniversity) {
-                return res.status(404).send(dispatcher(res, null, 'error', 'no data found'));
-            }
-            let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
-            let result: any = {};
-            const where: any = {};
-            if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
-                where[`institution_type_id`] = JSON.parse(deValue);
-                result = await this.crudService.findAll(streams, {
-                    attributes: [
-                        'stream_name',
-                        "stream_id"
-                    ],
-                    where: {
-                        [Op.and]: [
-                            objWhereClauseStatusPart.whereClauseStatusPart,
-                            where
-                        ]
-                    },
-                    order: ['stream_name']
-                });
-                //result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams where institution_type_id = ${deValue} group by stream_name;`, { type: QueryTypes.SELECT });
-            } else {
-                result = await this.crudService.findAll(streams, {
-                    attributes: [
-                        'stream_name',
-                        'stream_id'
-                    ],
-                    where: {
-                        [Op.and]: [
-                            objWhereClauseStatusPart.whereClauseStatusPart
-                        ]
-                    },
-                    order: ['stream_name']
-                });
-                //result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`, { type: QueryTypes.SELECT });
-            }
-            if (result.length > 0) {
-                result.forEach((obj: any) => {
-                    response.push({ stream_name: obj.dataValues.stream_name, stream_id: obj.dataValues.stream_id })
-                });
-                return res.status(200).send(dispatcher(res, response, 'success'));
-            }
-            // result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams;`, { type: QueryTypes.SELECT });
-            //return res.status(200).send(dispatcher(res, result, 'success'));
-            return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
-        } catch (error) {
-            next(error);
-        }
-    }
+    // private async getStreams(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    //     try {
+    //         let response: any = [];
+    //         const deValue: any = await this.authService.decryptGlobal(req.params.institution_type_id);
+    //         const findUniversity = await this.crudService.findOne(institution_types, {
+    //             where: { institution_type_id: JSON.parse(deValue) }
+    //         })
+    //         if (!findUniversity) {
+    //             return res.status(404).send(dispatcher(res, null, 'error', 'no data found'));
+    //         }
+    //         let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
+    //         let result: any = {};
+    //         const where: any = {};
+    //         if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
+    //             where[`institution_type_id`] = JSON.parse(deValue);
+    //             result = await this.crudService.findAll(streams, {
+    //                 attributes: [
+    //                     'stream_name',
+    //                     "stream_id"
+    //                 ],
+    //                 where: {
+    //                     [Op.and]: [
+    //                         objWhereClauseStatusPart.whereClauseStatusPart,
+    //                         where
+    //                     ]
+    //                 },
+    //                 order: ['stream_name']
+    //             });
+    //             //result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams where institution_type_id = ${deValue} group by stream_name;`, { type: QueryTypes.SELECT });
+    //         } else {
+    //             result = await this.crudService.findAll(streams, {
+    //                 attributes: [
+    //                     'stream_name',
+    //                     'stream_id'
+    //                 ],
+    //                 where: {
+    //                     [Op.and]: [
+    //                         objWhereClauseStatusPart.whereClauseStatusPart
+    //                     ]
+    //                 },
+    //                 order: ['stream_name']
+    //             });
+    //             //result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`, { type: QueryTypes.SELECT });
+    //         }
+    //         if (result.length > 0) {
+    //             result.forEach((obj: any) => {
+    //                 response.push({ stream_name: obj.dataValues.stream_name, stream_id: obj.dataValues.stream_id })
+    //             });
+    //             return res.status(200).send(dispatcher(res, response, 'success'));
+    //         }
+    //         // result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams;`, { type: QueryTypes.SELECT });
+    //         //return res.status(200).send(dispatcher(res, result, 'success'));
+    //         return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
+    //     } catch (error) {
+    //         next(error);
+    //     }
+    // }
     private async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const result = await this.authService.orglogin(req.body);
@@ -291,12 +289,8 @@ export default class institutionsController extends BaseController {
             return res.status(200).send(dispatcher(res, speeches.LOGOUT_SUCCESS, 'success'));
         }
     }
-    protected async getMentors(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
-            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
-        }
+    private async getInstitutionTypes(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            let data: any;
 
             let newREQQuery: any = {}
             if (req.query.Data) {
@@ -305,104 +299,64 @@ export default class institutionsController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const institution_code = newREQQuery.institution_code
-            try {
-                const responseOfFindAndCountAll = await this.crudService.findAndCountAll(mentor, {
-                    attributes: [
-                        "mentor_id",
-                        "financial_year_id",
-                        "user_id",
-                        "institution_id",
-                        "mentor_title",
-                        "mentor_name",
-                        "mentor_name_vernacular",
-                        "mentor_mobile",
-                        "mentor_whatapp_mobile",
-                        "mentor_email",
-                        "date_of_birth",
-                        "gender"
-                    ],
-                    where: {
-                        status: 'ACTIVE'
-                    },
-                    include:
-                    {
-                        model: institutions,
-                        attributes: [
-                            "institution_id",
-                            "institution_code",
-                            "institution_name",
-                            "institution_name_vernacular"
-                        ], where: {
-                            institution_code: institution_code
-                        },
-                        include: [
-                            {
-                                model: places,
-                                attributes: [
-                                    'place_id',
-                                    'place_type',
-                                    'place_name',
-                                    'place_name_vernacular'
-                                ],
-                                include: {
-                                    model: taluks,
-                                    attributes: [
-                                        'taluk_id',
-                                        'taluk_name',
-                                        'taluk_name_vernacular'
+            const { institution_id } = newREQQuery
+            const result = await db.query(`SELECT DISTINCT
+            institution_type,it.institution_type_id
+        FROM
+            institutional_courses AS inC
+                JOIN
+            institution_types AS it ON inC.institution_type_id = it.institution_type_id
+        WHERE
+            institution_id = ${institution_id};`, { type: QueryTypes.SELECT })
+            return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async getStreams(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
 
-                                    ],
-                                    include: {
-                                        model: blocks,
-                                        attributes: [
-                                            'block_id',
-                                            'block_name',
-                                            'block_name_vernacular'
-                                        ],
-                                        include: {
-                                            model: districts,
-                                            attributes: [
-                                                'district_id',
-                                                'district_name',
-                                                'district_name_vernacular',
-                                                'district_headquarters',
-                                                'district_headquarters_vernacular'
-                                            ],
-                                            include: {
-                                                model: states,
-                                                attributes: [
-                                                    'state_id',
-                                                    'state_name',
-                                                    'state_name_vernacular'
-                                                ]
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                model: institution_types,
-                                attributes: [
-                                    'institution_type_id',
-                                    'institution_type'
-                                ]
-                            }
-                        ]
-                    },
-                })
-                data = responseOfFindAndCountAll;
-            } catch (error: any) {
-                return res.status(500).send(dispatcher(res, data, 'error'))
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            if (!data || data instanceof Error) {
-                if (data != null) {
-                    throw notFound(data.message)
-                } else {
-                    throw notFound()
-                }
+            const { institution_id, institution_type_id } = newREQQuery
+            const result = await db.query(`SELECT DISTINCT
+            stream_name,s.stream_id
+        FROM
+            institutional_courses AS inC
+                JOIN
+            streams AS s ON inC.stream_id = s.stream_id
+        WHERE
+            institution_id = ${institution_id} and institution_type_id = ${institution_type_id};`, { type: QueryTypes.SELECT })
+            return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async getPrograms(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            return res.status(200).send(dispatcher(res, data, 'success'));
+            const { institution_id, institution_type_id, stream_id } = newREQQuery
+            const result = await db.query(`SELECT DISTINCT
+            program_name,institution_course_id
+        FROM
+            institutional_courses AS inC
+                JOIN
+            programs AS p ON inC.program_id = p.program_id
+        WHERE
+            institution_id = ${institution_id} and institution_type_id = ${institution_type_id} and stream_id = ${stream_id};`, { type: QueryTypes.SELECT })
+            return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
         }

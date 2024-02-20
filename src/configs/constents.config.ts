@@ -74,6 +74,13 @@ export const constents = {
     },
     default: 'ACTIVE'
   },
+  program_type_flags: {
+    list: {
+      'UG': 'UG',
+      'PG': 'PG',
+      'DIPLOMA': 'DIPLOMA'
+    }
+  },
   place_type_status_flags: {
     list: {
       'METRO': 'METRO',

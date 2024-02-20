@@ -1,14 +1,16 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { institutional_courses } from './institutional_courses.model';
 
 
-export class institution_types extends Model<InferAttributes<institution_types>, InferCreationAttributes<institution_types>> {
-    declare institution_type_id: CreationOptional<number>;
-    declare institution_short_name: String;
-    declare institution_type: String;
+export class institutional_courses extends Model<InferAttributes<institutional_courses>, InferCreationAttributes<institutional_courses>> {
+    declare institution_course_id: CreationOptional<number>;
+    declare institution_id: number;
+    declare institution_type_id: number;
+    declare stream_id : number;
+    declare program_id : number;
     declare status: Enumerator;
+    declare institutional_courses : number;
     declare created_by: number;
     declare created_at: Date;
     declare updated_by: number;
@@ -16,21 +18,30 @@ export class institution_types extends Model<InferAttributes<institution_types>,
     
 }
 
-institution_types.init({
-    institution_type_id: {
+institutional_courses.init({
+    institution_course_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
-    institution_type: {
-        type: DataTypes.STRING
+    institution_id: {
+        type: DataTypes.INTEGER
     },
-    institution_short_name: {
-        type: DataTypes.STRING
+    institution_type_id: {
+        type: DataTypes.INTEGER
+    },
+    stream_id: {
+        type: DataTypes.INTEGER
+    },
+    program_id: {
+        type: DataTypes.INTEGER
     },
     status: {
         type: DataTypes.ENUM(...Object.values(constents.institutions_status_flags.list)),
         defaultValue: constents.institutions_status_flags.default
+    },
+    institutional_courses: {
+        type: DataTypes.INTEGER
     },
     created_by: {
         type: DataTypes.INTEGER,
@@ -56,12 +67,10 @@ institution_types.init({
 },
     {
         sequelize: db,
-        tableName: 'institution_types',
+        tableName: 'institutional_courses',
         timestamps: true,
         updatedAt: 'updated_at',
         createdAt: 'created_at',
     }
 
 );
-institution_types.belongsTo(institutional_courses, {targetKey: 'institution_type_id',foreignKey: 'institution_type_id', constraints: false });
-institutional_courses.hasOne(institution_types, { sourceKey: 'institution_type_id', foreignKey: 'institution_type_id', constraints: false });
