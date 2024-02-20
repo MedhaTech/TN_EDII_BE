@@ -220,13 +220,23 @@ export default class ideasController extends BaseController {
             let attachments: any = [];
             let result: any = {};
             let proxyAgent = new HttpsProxyAgent('http://10.236.241.101:9191');
-            let s3 = new S3({
-                apiVersion: '2006-03-01',
-                region: process.env.AWS_REGION,
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-                httpOptions: { agent: proxyAgent }
-            });
+            let s3
+            if(process.env.ISAWSSERVER){
+                s3 = new S3({
+                    apiVersion: '2006-03-01',
+                    region: process.env.AWS_REGION,
+                    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+                });
+            }else{
+                s3 = new S3({
+                    apiVersion: '2006-03-01',
+                    region: process.env.AWS_REGION,
+                    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                    httpOptions: { agent: proxyAgent }
+                });
+            }
             if (!req.files) {
                 return result;
             }
