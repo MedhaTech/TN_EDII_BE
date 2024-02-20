@@ -1,13 +1,14 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { institutional_courses } from './institutional_courses.model';
 
 
-export class institution_types extends Model<InferAttributes<institution_types>, InferCreationAttributes<institution_types>> {
-    declare institution_type_id: CreationOptional<number>;
-    declare institution_short_name: String;
-    declare institution_type: String;
+export class programs extends Model<InferAttributes<programs>, InferCreationAttributes<programs>> {
+    declare program_id: CreationOptional<number>;
+    declare program_name: String;
+    declare program_short_name: String;
+    declare no_of_years : number;
+    declare program_type : Enumerator;
     declare status: Enumerator;
     declare created_by: number;
     declare created_at: Date;
@@ -16,17 +17,23 @@ export class institution_types extends Model<InferAttributes<institution_types>,
     
 }
 
-institution_types.init({
-    institution_type_id: {
+programs.init({
+    program_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
-    institution_type: {
+    program_name: {
         type: DataTypes.STRING
     },
-    institution_short_name: {
+    program_short_name: {
         type: DataTypes.STRING
+    },
+    no_of_years: {
+        type: DataTypes.INTEGER
+    },
+    program_type: {
+        type: DataTypes.ENUM(...Object.values(constents.program_type_flags.list))
     },
     status: {
         type: DataTypes.ENUM(...Object.values(constents.institutions_status_flags.list)),
@@ -56,12 +63,10 @@ institution_types.init({
 },
     {
         sequelize: db,
-        tableName: 'institution_types',
+        tableName: 'programs',
         timestamps: true,
         updatedAt: 'updated_at',
         createdAt: 'created_at',
     }
 
 );
-institution_types.belongsTo(institutional_courses, {targetKey: 'institution_type_id',foreignKey: 'institution_type_id', constraints: false });
-institutional_courses.hasOne(institution_types, { sourceKey: 'institution_type_id', foreignKey: 'institution_type_id', constraints: false });
