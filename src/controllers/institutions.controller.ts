@@ -378,6 +378,9 @@ export default class institutionsController extends BaseController {
         }
     }
     private async getMyprofile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
         try {
             const { institution_id } = req.body
             let result: any = {}
