@@ -17,6 +17,7 @@ import { states } from "../models/states.model";
 import { institution_types } from "../models/institution_types.model";
 import { institution_principals } from "../models/institution_principals.model";
 import db from "../utils/dbconnection.util"
+import { institutions } from "../models/institutions.model";
 
 export default class institutionsController extends BaseController {
 
@@ -37,6 +38,8 @@ export default class institutionsController extends BaseController {
         this.router.get(`${this.path}/programs`, this.getPrograms.bind(this));
         this.router.post(`${this.path}/login`, this.login.bind(this));
         this.router.get(`${this.path}/logout`, this.logout.bind(this));
+        this.router.put(`${this.path}/changePassword`, this.changePassword.bind(this));
+        this.router.get(`${this.path}/Myprofile`, this.getMyprofile.bind(this));
 
         super.initializeRoutes();
     };
@@ -280,6 +283,19 @@ export default class institutionsController extends BaseController {
             return res.status(401).send(dispatcher(res, error, 'error', speeches.USER_RISTRICTED, 401));
         }
     }
+    private async changePassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        const result = await this.authService.orgchangePassword(req.body, res);
+        if (!result) {
+            return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_NOT_FOUND));
+        } else if (result.error) {
+            return res.status(404).send(dispatcher(res, result.error, 'error', result.error));
+        }
+        else if (result.match) {
+            return res.status(404).send(dispatcher(res, null, 'error', speeches.USER_PASSWORD));
+        } else {
+            return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.USER_PASSWORD_CHANGE, 202));
+        }
+    }
 
     private async logout(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const result = await this.authService.orglogout(req.body, res);
@@ -359,6 +375,105 @@ export default class institutionsController extends BaseController {
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
+        }
+    }
+    private async getMyprofile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        const { institution_id } = req.body
+        let result: any = {}
+        const org = await this.crudService.findOne(institutions, {
+            where: {
+                institution_id: institution_id
+            },
+            include: [
+                {
+                    model: places,
+                    attributes: [
+                        'place_id',
+                        'place_type',
+                        'place_name',
+                        'place_name_vernacular'
+                    ],
+                    include: {
+                        model: taluks,
+                        attributes: [
+                            'taluk_id',
+                            'taluk_name',
+                            'taluk_name_vernacular'
+
+                        ],
+                        include: {
+                            model: blocks,
+                            attributes: [
+                                'block_id',
+                                'block_name',
+                                'block_name_vernacular'
+                            ],
+                            include: {
+                                model: districts,
+                                attributes: [
+                                    'district_id',
+                                    'district_name',
+                                    'district_name_vernacular',
+                                    'district_headquarters',
+                                    'district_headquarters_vernacular'
+                                ],
+                                include: {
+                                    model: states,
+                                    attributes: [
+                                        'state_id',
+                                        'state_name',
+                                        'state_name_vernacular'
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    model: institution_principals,
+                    attributes: [
+                        'institution_principal_id',
+                        'principal_name',
+                        'principal_name_vernacular',
+                        'principal_email',
+                        'principal_mobile',
+                        'ed_cell_coordinator_name',
+                        'ed_cell_coordinator_name_vernacular',
+                        'ed_cell_coordinator_email',
+                        'ed_cell_coordinator_mobile'
+                    ]
+                },
+            ]
+        });
+        const listofcoures = await db.query(`SELECT 
+        institution_course_id,
+        special_category,
+        institution_type,
+        institution_short_name,
+        stream_name,
+        stream_short_form,
+        program_name,
+        program_short_name,
+        no_of_years,
+        program_type
+    FROM
+        institutional_courses AS inct
+            JOIN
+        institution_types AS it ON inct.institution_type_id = it.institution_type_id
+            JOIN
+        streams AS st ON inct.stream_id = st.stream_id
+            JOIN
+        programs AS p ON inct.program_id = p.program_id
+    WHERE
+        institution_id = ${institution_id};`, { type: QueryTypes.SELECT })
+        const telePhoneMsg = await db.query(`select url,on_off from popup where popup_id = 4`, { type: QueryTypes.SELECT });
+        result['profile'] = org;
+        result['courses_list'] = listofcoures;
+        result['telePhoneMsg'] = telePhoneMsg;
+        if (!org) {
+            res.status(400).send(dispatcher(res, null, 'error', speeches.BAD_REQUEST))
+        } else {
+            res.status(200).send(dispatcher(res, result, 'success', speeches.FETCH_FILE));
         }
     }
 }

@@ -8,6 +8,10 @@ export class institutions extends Model<InferAttributes<institutions>, InferCrea
     declare institution_code: string;
     declare institution_name: string;
     declare institution_name_vernacular: string;
+    declare principal_name: string;
+    declare principal_whatsapp_mobile: string;
+    declare principal_mobile: string;
+    declare principal_email: string;
     declare place_id : number;
     declare status: Enumerator;
     declare created_by: number;
@@ -32,6 +36,18 @@ institutions.init({
         allowNull: false
     },
     institution_name_vernacular: {
+        type: DataTypes.STRING
+    },
+    principal_name: {
+        type: DataTypes.STRING
+    },
+    principal_whatsapp_mobile: {
+        type: DataTypes.STRING
+    },
+    principal_mobile: {
+        type: DataTypes.STRING
+    },
+    principal_email: {
         type: DataTypes.STRING
     },
     place_id: {

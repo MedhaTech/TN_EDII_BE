@@ -1,6 +1,7 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
+import { institutions } from './institutions.model';
 
 
 export class institutional_courses extends Model<InferAttributes<institutional_courses>, InferCreationAttributes<institutional_courses>> {
@@ -74,3 +75,5 @@ institutional_courses.init({
     }
 
 );
+institutional_courses.belongsTo(institutions, {targetKey: 'institution_id',foreignKey: 'institution_id', constraints: false });
+institutions.hasOne(institutional_courses, { sourceKey: 'institution_id', foreignKey: 'institution_id', constraints: false });

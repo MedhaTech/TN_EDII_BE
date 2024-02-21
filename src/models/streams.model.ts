@@ -13,6 +13,7 @@ export class streams extends Model<InferAttributes<streams>, InferCreationAttrib
     declare created_at: Date;
     declare updated_by: number;
     declare updated_at: Date;
+    declare sort_order: number;
     
 }
 
@@ -33,6 +34,9 @@ streams.init({
     status: {
         type: DataTypes.ENUM(...Object.values(constents.institutions_status_flags.list)),
         defaultValue: constents.institutions_status_flags.default
+    },
+    sort_order: {
+        type: DataTypes.INTEGER
     },
     created_by: {
         type: DataTypes.INTEGER,
