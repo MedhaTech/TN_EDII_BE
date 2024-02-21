@@ -5,11 +5,11 @@ import db from '../utils/dbconnection.util';
 import { notification } from './notification.model';
 import { baseConfig } from '../configs/base.config';
 import { user } from './user.model';
-import { streams } from './streams.model';
+import { institutional_courses } from './institutional_courses.model';
 
 export class student extends Model<InferAttributes<student>, InferCreationAttributes<student>> {
     declare student_id: CreationOptional<number>;
-    declare stream_id: number;
+    declare institution_course_id: number;
     declare year_of_study: number;
     declare financial_year_id: number;
     declare user_id: number;
@@ -44,7 +44,7 @@ student.init(
             autoIncrement: true,
             primaryKey: true,
         },
-        stream_id: {
+        institution_course_id: {
             type: DataTypes.INTEGER
         },
         year_of_study: {
@@ -142,5 +142,5 @@ student.belongsTo(user, { foreignKey: 'user_id' });
 user.hasMany(student, { foreignKey: 'user_id' });
 student.belongsTo(user, { foreignKey: 'user_id' });
 user.hasMany(student, { foreignKey: 'user_id' });
-student.belongsTo(streams, {targetKey: 'stream_id',foreignKey: 'stream_id', constraints: false });
-streams.hasOne(student, { sourceKey: 'stream_id', foreignKey: 'stream_id', constraints: false });
+student.belongsTo(institutional_courses, {targetKey: 'institution_course_id',foreignKey: 'institution_course_id', constraints: false });
+institutional_courses.hasOne(student, { sourceKey: 'institution_course_id', foreignKey: 'institution_course_id', constraints: false });
