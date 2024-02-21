@@ -15,6 +15,7 @@ export class programs extends Model<InferAttributes<programs>, InferCreationAttr
     declare created_at: Date;
     declare updated_by: number;
     declare updated_at: Date;
+    declare sort_order: number;
     
 }
 
@@ -39,6 +40,9 @@ programs.init({
     status: {
         type: DataTypes.ENUM(...Object.values(constents.institutions_status_flags.list)),
         defaultValue: constents.institutions_status_flags.default
+    },
+    sort_order: {
+        type: DataTypes.INTEGER
     },
     created_by: {
         type: DataTypes.INTEGER,
