@@ -41,7 +41,7 @@ export const mentorUpdateSchema = Joi.object().keys({
     }),
     mentor_email: Joi.string().trim().min(1).required().email(),
     mentor_mobile: Joi.string().trim().regex(constents.ONLY_DIGIT_PATTERN),
-    mentor_name: Joi.string().trim().min(1).regex(constents.ALPHA_NUMERIC_PATTERN).required().messages({
+    mentor_name: Joi.string().trim().min(1).regex(constents.UNICODE_PATTERN).required().messages({
         'string.empty': speeches.USER_FULLNAME_REQUIRED
     }),
     date_of_birth: Joi.date(),
@@ -60,7 +60,7 @@ export const mentorRegSchema = Joi.object().keys({
     }),
     mentor_email: Joi.string().trim().min(1).required().email(),
     mentor_mobile: Joi.string().trim().regex(constents.ONLY_DIGIT_PATTERN),
-    mentor_name: Joi.string().trim().min(1).regex(constents.ALPHA_NUMERIC_PATTERN).required().messages({
+    mentor_name: Joi.string().trim().min(1).regex(constents.UNICODE_PATTERN).required().messages({
         'string.empty': speeches.USER_FULLNAME_REQUIRED
     }),
     date_of_birth: Joi.date(),

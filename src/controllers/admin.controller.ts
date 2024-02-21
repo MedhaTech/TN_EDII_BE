@@ -79,7 +79,7 @@ export default class AdminController extends BaseController {
                 throw notFound();
             } else {
                 const adminData = await this.crudService.update(modelLoaded, payload, { where: where });
-                const userData = await this.crudService.update(user, payload, { where: { user_id: findAdminDetail.dataValues.user_id } });
+                const userData = await this.crudService.update(user, payload, { where: { user_id: findAdminDetail.dataValues.user_id } } );
                 if (!adminData || !userData) {
                     throw badRequest()
                 }

@@ -17,23 +17,23 @@ export default class BadgeController extends BaseController {
         this.path = '/badges';
     }
     protected initializeValidations(): void {
-        this.validations =  new ValidationsHolder(badgeSchema,badgeUpdateSchema);
+        this.validations = new ValidationsHolder(badgeSchema, badgeUpdateSchema);
     }
     protected initializeRoutes(): void {
         //example route to add 
         //this.router.get(`${this.path}/`, this.getData);
         super.initializeRoutes();
     };
-    protected  async createData(req: Request, res: Response, next: NextFunction) {
+    protected async createData(req: Request, res: Response, next: NextFunction) {
         const copy = await this.copyAllFiles(req, "badge", "images", "badges");
         return super.createData(req, res, next);
     }
 
     protected getData(req: Request, res: Response, next: NextFunction) {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT'){
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT') {
             throw unauthorized(speeches.ROLE_ACCES_DECLINE)
         }
-        return super.getData(req,res,next,[],
-                    {exclude:constents.SEQUELIZE_FLAGS.DEFAULT_EXCLUDE_SCOPE})
+        return super.getData(req, res, next, [],
+            { exclude: constents.SEQUELIZE_FLAGS.DEFAULT_EXCLUDE_SCOPE })
     }
 }

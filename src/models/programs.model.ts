@@ -3,39 +3,37 @@ import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
 
 
-export class institutions extends Model<InferAttributes<institutions>, InferCreationAttributes<institutions>> {
-    declare institution_id: CreationOptional<number>;
-    declare institution_code: string;
-    declare institution_name: string;
-    declare institution_name_vernacular: string;
-    declare place_id : number;
+export class programs extends Model<InferAttributes<programs>, InferCreationAttributes<programs>> {
+    declare program_id: CreationOptional<number>;
+    declare program_name: String;
+    declare program_short_name: String;
+    declare no_of_years : number;
+    declare program_type : Enumerator;
     declare status: Enumerator;
     declare created_by: number;
     declare created_at: Date;
     declare updated_by: number;
     declare updated_at: Date;
-    declare role:string;
+    
 }
 
-institutions.init({
-    institution_id: {
+programs.init({
+    program_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
-    institution_code: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    institution_name: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    institution_name_vernacular: {
+    program_name: {
         type: DataTypes.STRING
     },
-    place_id: {
+    program_short_name: {
+        type: DataTypes.STRING
+    },
+    no_of_years: {
         type: DataTypes.INTEGER
+    },
+    program_type: {
+        type: DataTypes.ENUM(...Object.values(constents.program_type_flags.list))
     },
     status: {
         type: DataTypes.ENUM(...Object.values(constents.institutions_status_flags.list)),
@@ -61,16 +59,14 @@ institutions.init({
         allowNull: true,
         defaultValue: DataTypes.NOW,
         onUpdate: new Date().toLocaleString()
-    },
-    role: {
-        type: DataTypes.STRING
-    },
+    }
 },
     {
         sequelize: db,
-        tableName: 'institutions',
+        tableName: 'programs',
         timestamps: true,
         updatedAt: 'updated_at',
         createdAt: 'created_at',
     }
+
 );

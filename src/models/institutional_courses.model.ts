@@ -3,43 +3,45 @@ import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
 
 
-export class institutions extends Model<InferAttributes<institutions>, InferCreationAttributes<institutions>> {
-    declare institution_id: CreationOptional<number>;
-    declare institution_code: string;
-    declare institution_name: string;
-    declare institution_name_vernacular: string;
-    declare place_id : number;
+export class institutional_courses extends Model<InferAttributes<institutional_courses>, InferCreationAttributes<institutional_courses>> {
+    declare institution_course_id: CreationOptional<number>;
+    declare institution_id: number;
+    declare institution_type_id: number;
+    declare stream_id : number;
+    declare program_id : number;
     declare status: Enumerator;
+    declare institutional_courses : number;
     declare created_by: number;
     declare created_at: Date;
     declare updated_by: number;
     declare updated_at: Date;
-    declare role:string;
+    
 }
 
-institutions.init({
-    institution_id: {
+institutional_courses.init({
+    institution_course_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true
     },
-    institution_code: {
-        type: DataTypes.STRING,
-        allowNull: false,
+    institution_id: {
+        type: DataTypes.INTEGER
     },
-    institution_name: {
-        type: DataTypes.STRING,
-        allowNull: false
+    institution_type_id: {
+        type: DataTypes.INTEGER
     },
-    institution_name_vernacular: {
-        type: DataTypes.STRING
+    stream_id: {
+        type: DataTypes.INTEGER
     },
-    place_id: {
+    program_id: {
         type: DataTypes.INTEGER
     },
     status: {
         type: DataTypes.ENUM(...Object.values(constents.institutions_status_flags.list)),
         defaultValue: constents.institutions_status_flags.default
+    },
+    institutional_courses: {
+        type: DataTypes.INTEGER
     },
     created_by: {
         type: DataTypes.INTEGER,
@@ -61,16 +63,14 @@ institutions.init({
         allowNull: true,
         defaultValue: DataTypes.NOW,
         onUpdate: new Date().toLocaleString()
-    },
-    role: {
-        type: DataTypes.STRING
-    },
+    }
 },
     {
         sequelize: db,
-        tableName: 'institutions',
+        tableName: 'institutional_courses',
         timestamps: true,
         updatedAt: 'updated_at',
         createdAt: 'created_at',
     }
+
 );

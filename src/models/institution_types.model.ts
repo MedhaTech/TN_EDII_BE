@@ -1,12 +1,12 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { institutions } from './institutions.model';
-import { streams } from './streams.model';
+import { institutional_courses } from './institutional_courses.model';
 
 
 export class institution_types extends Model<InferAttributes<institution_types>, InferCreationAttributes<institution_types>> {
     declare institution_type_id: CreationOptional<number>;
+    declare institution_short_name: String;
     declare institution_type: String;
     declare status: Enumerator;
     declare created_by: number;
@@ -23,6 +23,9 @@ institution_types.init({
         primaryKey: true
     },
     institution_type: {
+        type: DataTypes.STRING
+    },
+    institution_short_name: {
         type: DataTypes.STRING
     },
     status: {
@@ -60,7 +63,5 @@ institution_types.init({
     }
 
 );
-institution_types.belongsTo(institutions, {targetKey: 'institution_type_id',foreignKey: 'institution_type_id', constraints: false });
-institutions.hasOne(institution_types, { sourceKey: 'institution_type_id', foreignKey: 'institution_type_id', constraints: false });
-institution_types.belongsTo(streams, {targetKey: 'institution_type_id',foreignKey: 'institution_type_id', constraints: false });
-streams.hasOne(institution_types, { sourceKey: 'institution_type_id', foreignKey: 'institution_type_id', constraints: false });
+institution_types.belongsTo(institutional_courses, {targetKey: 'institution_type_id',foreignKey: 'institution_type_id', constraints: false });
+institutional_courses.hasOne(institution_types, { sourceKey: 'institution_type_id', foreignKey: 'institution_type_id', constraints: false });

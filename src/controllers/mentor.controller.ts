@@ -296,13 +296,6 @@ export default class MentorController extends BaseController {
                                         }
                                     }
                                 }
-                            },
-                            {
-                                model: institution_types,
-                                attributes: [
-                                    'institution_type_id',
-                                    'institution_type'
-                                ]
                             }
                         ]
                     }
@@ -386,13 +379,6 @@ export default class MentorController extends BaseController {
                                             }
                                         }
                                     }
-                                },
-                                {
-                                    model: institution_types,
-                                    attributes: [
-                                        'institution_type_id',
-                                        'institution_type'
-                                    ]
                                 }
                             ]
                         }, limit, offset
@@ -533,7 +519,7 @@ export default class MentorController extends BaseController {
                 result.data['mentor_id'] = mentorData.dataValues.mentor_id;
                 result.data['institution_name'] = mentorData.dataValues.institution.dataValues.institution_name;
                 result.data['mentor_title'] = mentorData.dataValues.mentor_title;
-                result.data['institution_type_id'] = mentorData.dataValues.institution.dataValues.institution_type_id;
+                result.data['institution_id'] = mentorData.dataValues.institution.dataValues.institution_id;
                 return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
             }
         } catch (error) {

@@ -801,7 +801,7 @@ export default class DashboardController extends BaseController {
         }
     }
     protected async getteamCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'INSTITUTION') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
@@ -813,9 +813,19 @@ export default class DashboardController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { mentor_id } = newREQQuery
+            const { mentor_id, institution_id } = newREQQuery
             if (mentor_id) {
                 result = await db.query(`SELECT count(*) as teams_count FROM teams where mentor_id = ${mentor_id}`, { type: QueryTypes.SELECT });
+            } else if (institution_id) {
+                result = await db.query(`SELECT 
+                COUNT(*) AS teamCount
+            FROM
+                teams
+                    JOIN
+                mentors ON teams.mentor_id = mentors.mentor_id
+            WHERE
+                institution_id = ${institution_id};
+                `, { type: QueryTypes.SELECT });
             }
             else {
                 result = await db.query(`SELECT 
@@ -837,7 +847,7 @@ export default class DashboardController extends BaseController {
         }
     }
     protected async getstudentCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'INSTITUTION') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
@@ -849,9 +859,20 @@ export default class DashboardController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { mentor_id } = newREQQuery
+            const { mentor_id, institution_id } = newREQQuery
             if (mentor_id) {
                 result = await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${mentor_id};`, { type: QueryTypes.SELECT });
+            } else if (institution_id) {
+                result = await db.query(`SELECT 
+                COUNT(*) AS student_count
+            FROM
+                students
+                    JOIN
+                teams ON students.team_id = teams.team_id
+                    JOIN
+                mentors ON teams.mentor_id = mentors.mentor_id
+            WHERE
+                institution_id = ${institution_id};`, { type: QueryTypes.SELECT });
             }
             else {
                 result = await db.query(`SELECT 
@@ -875,7 +896,7 @@ export default class DashboardController extends BaseController {
         }
     }
     protected async getideaCount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR' && res.locals.role !== 'INSTITUTION') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
@@ -887,9 +908,22 @@ export default class DashboardController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { mentor_id } = newREQQuery
+            const { mentor_id, institution_id } = newREQQuery
             if (mentor_id) {
                 result = await db.query(`SELECT count(*) as idea_count FROM ideas join teams on ideas.team_id = teams.team_id where mentor_id = ${mentor_id} && ideas.status = 'SUBMITTED';`, { type: QueryTypes.SELECT });
+            }
+            if (institution_id) {
+                result = await db.query(`SELECT 
+                COUNT(*) AS idea_count
+            FROM
+                ideas
+                    JOIN
+                teams ON ideas.team_id = teams.team_id
+                    JOIN
+                mentors ON teams.mentor_id = mentors.mentor_id
+            WHERE
+                institution_id = ${institution_id}
+                    && ideas.status = 'SUBMITTED';`, { type: QueryTypes.SELECT });
             }
             res.status(200).send(dispatcher(res, result, 'done'))
         }
