@@ -378,74 +378,75 @@ export default class institutionsController extends BaseController {
         }
     }
     private async getMyprofile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        const { institution_id } = req.body
-        let result: any = {}
-        const org = await this.crudService.findOne(institutions, {
-            where: {
-                institution_id: institution_id
-            },
-            include: [
-                {
-                    model: places,
-                    attributes: [
-                        'place_id',
-                        'place_type',
-                        'place_name',
-                        'place_name_vernacular'
-                    ],
-                    include: {
-                        model: taluks,
+        try {
+            const { institution_id } = req.body
+            let result: any = {}
+            const org = await this.crudService.findOne(institutions, {
+                where: {
+                    institution_id: institution_id
+                },
+                include: [
+                    {
+                        model: places,
                         attributes: [
-                            'taluk_id',
-                            'taluk_name',
-                            'taluk_name_vernacular'
-
+                            'place_id',
+                            'place_type',
+                            'place_name',
+                            'place_name_vernacular'
                         ],
                         include: {
-                            model: blocks,
+                            model: taluks,
                             attributes: [
-                                'block_id',
-                                'block_name',
-                                'block_name_vernacular'
+                                'taluk_id',
+                                'taluk_name',
+                                'taluk_name_vernacular'
+
                             ],
                             include: {
-                                model: districts,
+                                model: blocks,
                                 attributes: [
-                                    'district_id',
-                                    'district_name',
-                                    'district_name_vernacular',
-                                    'district_headquarters',
-                                    'district_headquarters_vernacular'
+                                    'block_id',
+                                    'block_name',
+                                    'block_name_vernacular'
                                 ],
                                 include: {
-                                    model: states,
+                                    model: districts,
                                     attributes: [
-                                        'state_id',
-                                        'state_name',
-                                        'state_name_vernacular'
-                                    ]
+                                        'district_id',
+                                        'district_name',
+                                        'district_name_vernacular',
+                                        'district_headquarters',
+                                        'district_headquarters_vernacular'
+                                    ],
+                                    include: {
+                                        model: states,
+                                        attributes: [
+                                            'state_id',
+                                            'state_name',
+                                            'state_name_vernacular'
+                                        ]
+                                    }
                                 }
                             }
                         }
-                    }
-                },
-                {
-                    model: institution_principals,
-                    attributes: [
-                        'institution_principal_id',
-                        'principal_name',
-                        'principal_name_vernacular',
-                        'principal_email',
-                        'principal_mobile',
-                        'ed_cell_coordinator_name',
-                        'ed_cell_coordinator_name_vernacular',
-                        'ed_cell_coordinator_email',
-                        'ed_cell_coordinator_mobile'
-                    ]
-                },
-            ]
-        });
-        const listofcoures = await db.query(`SELECT 
+                    },
+                    {
+                        model: institution_principals,
+                        attributes: [
+                            'institution_principal_id',
+                            'principal_name',
+                            'principal_name_vernacular',
+                            'principal_email',
+                            'principal_mobile',
+                            'ed_cell_coordinator_name',
+                            'ed_cell_coordinator_name_vernacular',
+                            'ed_cell_coordinator_email',
+                            'ed_cell_coordinator_mobile'
+                        ]
+                    },
+                ]
+            });
+            const listofcoures = await db.query(`SELECT 
         institution_course_id,
         special_category,
         institution_type,
@@ -466,14 +467,19 @@ export default class institutionsController extends BaseController {
         programs AS p ON inct.program_id = p.program_id
     WHERE
         institution_id = ${institution_id};`, { type: QueryTypes.SELECT })
-        const telePhoneMsg = await db.query(`select url,on_off from popup where popup_id = 4`, { type: QueryTypes.SELECT });
-        result['profile'] = org;
-        result['courses_list'] = listofcoures;
-        result['telePhoneMsg'] = telePhoneMsg;
-        if (!org) {
-            res.status(400).send(dispatcher(res, null, 'error', speeches.BAD_REQUEST))
-        } else {
-            res.status(200).send(dispatcher(res, result, 'success', speeches.FETCH_FILE));
+            const telePhoneMsg = await db.query(`select url,on_off from popup where popup_id = 4`, { type: QueryTypes.SELECT });
+            result['profile'] = org;
+            result['courses_list'] = listofcoures;
+            result['telePhoneMsg'] = telePhoneMsg;
+            if (!org) {
+                res.status(400).send(dispatcher(res, null, 'error', speeches.BAD_REQUEST))
+            } else {
+                res.status(200).send(dispatcher(res, result, 'success', speeches.FETCH_FILE));
+            }
         }
+        catch (error) {
+            next(error);
+        }
+
     }
 }
