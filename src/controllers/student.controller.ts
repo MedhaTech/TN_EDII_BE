@@ -30,8 +30,10 @@ import { blocks } from '../models/blocks.model';
 import { taluks } from '../models/taluks.model';
 import { districts } from '../models/districts.model';
 import { states } from '../models/states.model';
+import { institutional_courses } from '../models/institutional_courses.model';
 import { institution_types } from '../models/institution_types.model';
 import { streams } from '../models/streams.model';
+import { programs } from '../models/programs.model';
 
 export default class StudentController extends BaseController {
     model = "student";
@@ -203,11 +205,23 @@ export default class StudentController extends BaseController {
                             },
                         },
                         {
-                            model: streams,
-                            attributes: [
-                                "stream_id",
-                                "stream_name",
-                                "stream_short_form"
+                            model: institutional_courses,
+                            attributes: ['institution_course_id', 'special_category'],
+                            include: [
+                                {
+                                    model: institution_types,
+                                    attributes: ['institution_type']
+                                },
+                                {
+                                    model: streams,
+                                    attributes: ['stream_name']
+                                },
+                                {
+                                    model: programs,
+                                    attributes: ['program_name', 'no_of_years', 'program_type'
+                                    ]
+                                }
+
                             ]
                         }
                     ],
