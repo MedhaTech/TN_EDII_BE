@@ -7,6 +7,7 @@ export class institutions extends Model<InferAttributes<institutions>, InferCrea
     declare institution_id: CreationOptional<number>;
     declare institution_code: string;
     declare institution_name: string;
+    declare password: string;
     declare institution_name_vernacular: string;
     declare principal_name: string;
     declare principal_whatsapp_mobile: string;
@@ -37,6 +38,10 @@ institutions.init({
     },
     institution_name_vernacular: {
         type: DataTypes.STRING
+    },
+    password: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
     principal_name: {
         type: DataTypes.STRING
