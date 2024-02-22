@@ -514,9 +514,9 @@ export default class authService {
     async orgchangePassword(requestBody: any, responseBody: any) {
         let result: any = {};
         try {
-            const user_res: any = await this.crudService.findOnePassword(organization, {
+            const user_res: any = await this.crudService.findOnePassword(institutions, {
                 where: {
-                    organization_id: requestBody.organization_id
+                    institution_id: requestBody.institution_id
                 }
             });
             if (!user_res) {
@@ -530,9 +530,9 @@ export default class authService {
                 result['match'] = user_res;
                 return result;
             } else {
-                const response = await this.crudService.update(organization, {
+                const response = await this.crudService.update(institutions, {
                     password: await bcrypt.hashSync(requestBody.new_password, process.env.SALT || baseConfig.SALT)
-                }, { where: { organization_id: user_res.dataValues.organization_id } });
+                }, { where: { institution_id: user_res.dataValues.institution_id } });
                 result['data'] = response;
                 return result;
             }

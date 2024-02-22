@@ -263,6 +263,25 @@ export default class TeamController extends BaseController {
             whereClauseStatusPart = { "status": paramStatus }
         }
         const student_res = await this.crudService.findAll(student, {
+            attributes: [
+                [
+                    db.literal(`( SELECT CONCAT(it.institution_type, '-', st.stream_name, '-', p.program_name, '-', p.program_type, '-', p.no_of_years,' Years') AS output FROM students AS s JOIN institutional_courses AS inct ON s.institution_course_id = inct.institution_course_id JOIN institution_types AS it ON inct.institution_type_id = it.institution_type_id JOIN streams AS st ON inct.stream_id = st.stream_id JOIN programs AS p ON inct.program_id = p.program_id WHERE s.student_id = \`student\`.\`student_id\`)`), 'course_name'
+                ],
+                'student_full_name',
+                'date_of_birth',
+                'mobile',
+                'email',
+                'Gender',
+                'Age',
+                'year_of_study',
+                'student_id',
+                'institution_course_id',
+                'financial_year_id',
+                'user_id',
+                'team_id',
+                'certificate_issued'
+            ],
+
             where: {
                 //TODO: replace the UUID with password name, and attach the username in a single object
                 // attributes: ['UUID', 'password'],
@@ -275,13 +294,6 @@ export default class TeamController extends BaseController {
                 model: user,
                 attributes: ["username"]
             },
-            {
-                model: streams,
-                attributes: [
-                    "stream_id",
-                    "stream_name",
-                    "stream_short_form"]
-            }
             ]
         });
         // console.log(student_res[0].dataValues.UUID)
@@ -300,7 +312,7 @@ export default class TeamController extends BaseController {
         if (res.locals.role !== 'ADMIN' && res.locals.role !== 'MENTOR') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
-        try { 
+        try {
             const mentor_id = req.body.mentor_id
             if (mentor_id) {
                 const countvalue = await db.query(`SELECT count(*) as student_count FROM students join teams on students.team_id = teams.team_id  where mentor_id = ${mentor_id};`, { type: QueryTypes.SELECT });

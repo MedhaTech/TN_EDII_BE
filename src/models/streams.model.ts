@@ -1,6 +1,7 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
+import { institutional_courses } from './institutional_courses.model';
 
 
 export class streams extends Model<InferAttributes<streams>, InferCreationAttributes<streams>> {
@@ -12,6 +13,7 @@ export class streams extends Model<InferAttributes<streams>, InferCreationAttrib
     declare created_at: Date;
     declare updated_by: number;
     declare updated_at: Date;
+    declare sort_order: number;
     
 }
 
@@ -32,6 +34,9 @@ streams.init({
     status: {
         type: DataTypes.ENUM(...Object.values(constents.institutions_status_flags.list)),
         defaultValue: constents.institutions_status_flags.default
+    },
+    sort_order: {
+        type: DataTypes.INTEGER
     },
     created_by: {
         type: DataTypes.INTEGER,
@@ -63,3 +68,5 @@ streams.init({
         createdAt: 'created_at',
     }
 );
+streams.belongsTo(institutional_courses, {targetKey: 'stream_id',foreignKey: 'stream_id', constraints: false });
+institutional_courses.hasOne(streams, { sourceKey: 'stream_id', foreignKey: 'stream_id', constraints: false });
