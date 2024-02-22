@@ -1,4 +1,4 @@
-import { notFound } from "boom";
+import { notFound, unauthorized } from "boom";
 import { NextFunction, Request, Response } from "express";
 import { speeches } from "../configs/speeches.config";
 import dispatcher from "../utils/dispatch.util";
@@ -382,7 +382,17 @@ export default class institutionsController extends BaseController {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            const { institution_id } = req.body
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
+            }
+            const { institution_id } = newREQQuery;
+            if (!institution_id) {
+                throw unauthorized(speeches.USER_INSTID_REQUIRED)
+            }
             let result: any = {}
             const org = await this.crudService.findOne(institutions, {
                 where: {
