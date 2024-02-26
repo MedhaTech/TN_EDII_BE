@@ -18,6 +18,8 @@ import { institution_types } from "../models/institution_types.model";
 import { institution_principals } from "../models/institution_principals.model";
 import db from "../utils/dbconnection.util"
 import { institutions } from "../models/institutions.model";
+import { institutional_courses } from "../models/institutional_courses.model";
+import { student } from "../models/student.model";
 
 export default class institutionsController extends BaseController {
 
@@ -44,8 +46,9 @@ export default class institutionsController extends BaseController {
         this.router.get(`${this.path}/blocks`, this.getblocks.bind(this));
         this.router.get(`${this.path}/taluks`, this.gettaluks.bind(this));
         this.router.get(`${this.path}/places`, this.getplaces.bind(this));
+        this.router.post(`${this.path}/addinstCourse`, this.addinstCourse.bind(this));
         this.router.put(`${this.path}/edit/:institution_id`, validationMiddleware(institutionsUpdateSchema), this.editData.bind(this));
-
+        this.router.delete(`${this.path}/delectinstCourse/:institution_course_id`, this.delectinstCourse.bind(this));
         super.initializeRoutes();
     };
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
@@ -262,8 +265,10 @@ export default class institutionsController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { institution_id } = newREQQuery
-            const result = await db.query(`SELECT DISTINCT
+            const { institution_id, status } = newREQQuery
+            let result: any;
+            if (institution_id) {
+                result = await db.query(`SELECT DISTINCT
             institution_type,it.institution_type_id
         FROM
             institutional_courses AS inC
@@ -271,6 +276,9 @@ export default class institutionsController extends BaseController {
             institution_types AS it ON inC.institution_type_id = it.institution_type_id
         WHERE
             institution_id = ${institution_id};`, { type: QueryTypes.SELECT })
+            } else if (status === 'ALL') {
+                result = await db.query(`SELECT institution_type,institution_type_id FROM institution_types order by sort_order;`, { type: QueryTypes.SELECT })
+            }
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
@@ -286,8 +294,10 @@ export default class institutionsController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { institution_id, institution_type_id } = newREQQuery
-            const result = await db.query(`SELECT DISTINCT
+            const { institution_id, institution_type_id, status } = newREQQuery
+            let result: any
+            if (institution_id && institution_type_id) {
+                result = await db.query(`SELECT DISTINCT
             stream_name,s.stream_id
         FROM
             institutional_courses AS inC
@@ -295,6 +305,9 @@ export default class institutionsController extends BaseController {
             streams AS s ON inC.stream_id = s.stream_id
         WHERE
             institution_id = ${institution_id} and institution_type_id = ${institution_type_id};`, { type: QueryTypes.SELECT })
+            } else if (status === 'ALL') {
+                result = await db.query(`SELECT stream_name,stream_id FROM streams order by sort_order;`, { type: QueryTypes.SELECT })
+            }
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
@@ -310,8 +323,10 @@ export default class institutionsController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { institution_id, institution_type_id, stream_id } = newREQQuery
-            const result = await db.query(`SELECT DISTINCT
+            const { institution_id, institution_type_id, stream_id, status } = newREQQuery
+            let result: any
+            if (institution_id && institution_type_id && stream_id) {
+                result = await db.query(`SELECT DISTINCT
             program_name,institution_course_id
         FROM
             institutional_courses AS inC
@@ -319,6 +334,9 @@ export default class institutionsController extends BaseController {
             programs AS p ON inC.program_id = p.program_id
         WHERE
             institution_id = ${institution_id} and institution_type_id = ${institution_type_id} and stream_id = ${stream_id};`, { type: QueryTypes.SELECT })
+            } else if (status === 'ALL') {
+                result = await db.query(`SELECT program_name,program_id FROM programs order by sort_order;`, { type: QueryTypes.SELECT })
+            }
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
@@ -523,6 +541,37 @@ export default class institutionsController extends BaseController {
             where[`institution_id`] = newParamId;
             let result: any = await this.crudService.update(institutions, req.body, { where: where });
             return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async addinstCourse(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            let result: any = await this.crudService.create(institutions, req.body);
+            return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async delectinstCourse(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            const newParamId: any = await this.authService.decryptGlobal(req.params.institution_course_id);
+            const where: any = {};
+            where[`institution_course_id`] = JSON.parse(newParamId);
+            const checkforid = await this.crudService.findOne(student, { where: where })
+            if (checkforid) {
+                return res.status(406).send(dispatcher(res, '', 'error', 'This course is associated with some student', 406));
+            } else {
+                let result: any = await this.crudService.delete(institutional_courses, { where: where });
+                return res.status(200).send(dispatcher(res, result, 'success'));
+            }
+
         } catch (error) {
             next(error);
         }
