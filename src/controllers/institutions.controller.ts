@@ -44,7 +44,7 @@ export default class institutionsController extends BaseController {
         this.router.get(`${this.path}/blocks`, this.getblocks.bind(this));
         this.router.get(`${this.path}/taluks`, this.gettaluks.bind(this));
         this.router.get(`${this.path}/places`, this.getplaces.bind(this));
-        this.router.put(`${this.path}/edit/:institution_id`, this.editData.bind(this));
+        this.router.put(`${this.path}/edit/:institution_id`, validationMiddleware(institutionsUpdateSchema), this.editData.bind(this));
 
         super.initializeRoutes();
     };
