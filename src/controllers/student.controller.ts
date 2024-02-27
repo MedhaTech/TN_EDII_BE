@@ -105,12 +105,7 @@ export default class StudentController extends BaseController {
                 whereClauseStatusPart = { "status": "ACTIVE" };
                 boolStatusWhereClauseRequired = true;
             };
-            let state: any = newREQQuery.state;
-            let stateFilter: any = {}
-            if (state) {
-                stateFilter['whereClause'] = state && typeof state == 'string' && state !== 'All States' ? { state } : {}
-                //stateFilter["liter"] = state && typeof state == 'string' && state !== 'All States' ? db.literal('`team->mentor->institutions->places->blocks->taluks->districts->states`.`state_name` = ' + JSON.stringify(state)) : {}
-            }
+            let district_name: any = newREQQuery.district_name;
             if (id) {
                 const newParamId = await this.authService.decryptGlobal(req.params.id);
                 where[`${this.model}_id`] = newParamId;
@@ -228,91 +223,58 @@ export default class StudentController extends BaseController {
                 });
             } else {
                 try {
-                    const responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
-                        attributes: [
-                            'student_full_name',
-                            'date_of_birth',
-                            'mobile',
-                            'email',
-                            'Gender',
-                            'Age',
-                            'year_of_study'
-                        ],
-                        where: {
-                            [Op.and]: [
-                                whereClauseStatusPart,
-                                // condition,
-                                stateFilter.whereClause
-                            ]
-                        },
-                        include: {
-                            model: mentor,
-                            attributes: [
-                                'mentor_name',
-                                'gender',
-                                'mentor_mobile'
-                            ],
-                            include:
-                            {
-                                model: institutions,
-                                attributes: [
-                                    "institution_id",
-                                    "institution_code",
-                                    "institution_name",
-                                    "institution_name_vernacular"
-                                ],
-                                include: [
-                                    {
-                                        model: places,
-                                        attributes: [
-                                            'place_id',
-                                            'place_type',
-                                            'place_name',
-                                            'place_name_vernacular'
-                                        ],
-                                        include: {
-                                            model: taluks,
-                                            attributes: [
-                                                'taluk_id',
-                                                'taluk_name',
-                                                'taluk_name_vernacular'
+                    let whereText
+                    if (district_name !== 'All Districts') {
+                        whereText = `and d.district_name = '${district_name}'`
+                    } else {
+                        whereText = ''
+                    }
+                    const responseOfFindAndCountAll = await db.query(`SELECT 
+                    student_id,
+                    institution_course_id,
+                    year_of_study,
+                    st.financial_year_id,
+                    st.user_id,
+                    st.team_id,
+                    student_full_name,
+                    st.date_of_birth,
+                    mobile,
+                    email,
+                    st.Gender,
+                    Age,
+                    mentor_name,
+                    ins.institution_id,
+                    institution_code,
+                    institution_name,
+                    place_type,
+                    place_name,
+                    taluk_name,
+                    block_name,
+                    district_name,
+                    district_headquarters,
+                    state_name
+                FROM
+                    students AS st
+                        JOIN
+                    teams AS te ON st.team_id = te.team_id
+                        JOIN
+                    mentors AS m ON te.mentor_id = m.mentor_id
+                        JOIN
+                    institutions AS ins ON m.institution_id = ins.institution_id
+                        JOIN
+                    places AS p ON ins.place_id = p.place_id
+                        JOIN
+                    taluks AS t ON p.taluk_id = t.taluk_id
+                        JOIN
+                    blocks AS b ON t.block_id = b.block_id
+                        JOIN
+                    districts AS d ON b.district_id = d.district_id
+                        JOIN
+                    states AS s ON d.state_id = s.state_id
+                WHERE
+                    ins.status = 'ACTIVE' ${whereText} ;`, { type: QueryTypes.SELECT })
+                    data = responseOfFindAndCountAll;
 
-                                            ],
-                                            include: {
-                                                model: blocks,
-                                                attributes: [
-                                                    'block_id',
-                                                    'block_name',
-                                                    'block_name_vernacular'
-                                                ],
-                                                include: {
-                                                    model: districts,
-                                                    attributes: [
-                                                        'district_id',
-                                                        'district_name',
-                                                        'district_name_vernacular',
-                                                        'district_headquarters',
-                                                        'district_headquarters_vernacular'
-                                                    ],
-                                                    include: {
-                                                        model: states,
-                                                        attributes: [
-                                                            'state_id',
-                                                            'state_name',
-                                                            'state_name_vernacular'
-                                                        ]
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-
-                        }, limit, offset
-                    });
-                    const result = this.getPagingData(responseOfFindAndCountAll, page, limit);
-                    data = result;
                 } catch (error: any) {
                     return res.status(500).send(dispatcher(res, data, 'error'))
                 }
@@ -573,7 +535,11 @@ export default class StudentController extends BaseController {
             WHERE
                 institution_id = ${mentorData.dataValues.institution.dataValues.institution_id};`, { type: QueryTypes.SELECT });
             result.data['institution_name'] = mentorData.dataValues.institution.dataValues.institution_name;
-            result.data['district'] = Object.values(valueDis[0]).toString()
+            let disName = '-'
+            if (valueDis && valueDis.length > 0) {
+                disName = Object.values(valueDis[0]).toString()
+            }
+            result.data['district'] = disName
             // result.data['state'] = mentorData.dataValues.organization.state;
             return res.status(200).send(dispatcher(res, result.data, 'success', speeches.USER_LOGIN_SUCCESS));
         }

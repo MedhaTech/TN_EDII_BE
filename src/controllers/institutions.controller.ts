@@ -479,6 +479,7 @@ export default class institutionsController extends BaseController {
         try {
             let response: any = [];
             const result = await db.query(`SELECT district_name FROM districts;`, { type: QueryTypes.SELECT })
+            response.push('All Districts');
             result.forEach((obj: any) => {
                 response.push(obj.district_name)
             });
