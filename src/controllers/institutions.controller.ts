@@ -43,6 +43,7 @@ export default class institutionsController extends BaseController {
         this.router.put(`${this.path}/changePassword`, this.changePassword.bind(this));
         this.router.get(`${this.path}/Myprofile`, this.getMyprofile.bind(this));
         this.router.get(`${this.path}/districts`, this.getdistricts.bind(this));
+        this.router.get(`${this.path}/districtNames`, this.getdistrictNames.bind(this));
         this.router.get(`${this.path}/blocks`, this.getblocks.bind(this));
         this.router.get(`${this.path}/taluks`, this.gettaluks.bind(this));
         this.router.get(`${this.path}/places`, this.getplaces.bind(this));
@@ -471,6 +472,21 @@ export default class institutionsController extends BaseController {
             next(error);
         }
     }
+    private async getdistrictNames(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            let response: any = [];
+            const result = await db.query(`SELECT district_name FROM districts;`, { type: QueryTypes.SELECT })
+            result.forEach((obj: any) => {
+                response.push(obj.district_name)
+            });
+            return res.status(200).send(dispatcher(res, response, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
     private async getblocks(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
@@ -550,7 +566,7 @@ export default class institutionsController extends BaseController {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            let result: any = await this.crudService.create(institutions, req.body);
+            let result: any = await this.crudService.create(institutional_courses, req.body);
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
