@@ -18,7 +18,7 @@ import { Op, QueryTypes } from 'sequelize';
 import { user } from "../models/user.model";
 import { team } from "../models/team.model";
 import { baseConfig } from "../configs/base.config";
-import SchoolDReportService from "../services/schoolDReort.service";
+import InstDReportService from "../services/instDReort.service";
 import StudentDReportService from "../services/studentDReort.service";
 import IdeaReportService from "../services/ideaReort.service";
 import { institutions } from "../models/institutions.model";
@@ -50,7 +50,7 @@ export default class ReportController extends BaseController {
         this.router.get(`${this.path}/mentordetailsreport`, this.getmentorDetailsreport.bind(this));
         this.router.get(`${this.path}/mentordetailstable`, this.getmentorDetailstable.bind(this));
         this.router.get(`${this.path}/studentdetailstable`, this.getstudentDetailstable.bind(this));
-        this.router.get(`${this.path}/refreshSchoolDReport`, this.refreshSchoolDReport.bind(this));
+        this.router.get(`${this.path}/refreshInstDReport`, this.refreshInstDReport.bind(this));
         this.router.get(`${this.path}/refreshStudentDReport`, this.refreshStudentDReport.bind(this));
         this.router.get(`${this.path}/refreshIdeaReport`, this.refreshIdeaReport.bind(this));
         this.router.get(`${this.path}/studentATLnonATLcount`, this.getstudentATLnonATLcount.bind(this));
@@ -512,62 +512,17 @@ export default class ReportController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { category, district, state } = newREQQuery;
-            let data: any = {}
-            let districtFilter: any = ''
-            let categoryFilter: any = ''
-            let stateFilter: any = ''
-            if (district !== 'All Districts' && category !== 'All Categorys' && state !== 'All States') {
-                districtFilter = `'${district}'`
-                categoryFilter = `'${category}'`
-                stateFilter = `'${state}'`
-            } else if (district !== 'All Districts') {
-                districtFilter = `'${district}'`
-                categoryFilter = `'%%'`
-                stateFilter = `'%%'`
-            } else if (category !== 'All Categorys') {
-                categoryFilter = `'${category}'`
-                districtFilter = `'%%'`
-                stateFilter = `'%%'`
-            } else if (state !== 'All States') {
-                stateFilter = `'${state}'`
-                districtFilter = `'%%'`
-                categoryFilter = `'%%'`
+            const district_name = newREQQuery.district_name;
+            let wherefilter = '';
+            if (district_name !== 'All Districts') {
+                wherefilter = `where district_name= '${district_name}'`;
             }
-            else {
-                districtFilter = `'%%'`
-                categoryFilter = `'%%'`
-                stateFilter = `'%%'`
-            }
-            const summary = await db.query(`SELECT 
-                udise_code AS 'ATL code',
-                unique_code AS 'UDISE code',
-                school_name AS 'School Name',
-                state,
-                district,
-                category,
-                city,
-                hm_name AS 'HM Name',
-                hm_contact AS 'HM Contact',
-                teacher_name AS 'Teacher Name',
-                teacher_email AS 'Teacher Email',
-                teacher_gender AS 'Teacher Gender',
-                teacher_contact AS 'Teacher Contact',
-                teacher_whatsapp_contact AS 'Teacher WhatsApp Contact',
-                course_status AS 'Course Status',
-                post_survey_status AS 'Post Survey Status',
-                team_count,
-                student_count,
-                countop,
-                courseinprogess,
-                submittedcout,
-                draftcout
+            const data = await db.query(`SELECT 
+                *
             FROM
-                school_report
-            WHERE
-            state LIKE ${stateFilter} && district LIKE ${districtFilter} && category LIKE ${categoryFilter}
-            ORDER BY district,teacher_name;`, { type: QueryTypes.SELECT })
-            data = summary;
+                Institution_report
+            ${wherefilter}
+            ORDER BY district_name,mentor_name;`, { type: QueryTypes.SELECT })
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
@@ -592,85 +547,108 @@ export default class ReportController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const state = newREQQuery.state;
+            const district_name = newREQQuery.district_name;
             let wherefilter = '';
-            if (state) {
-                wherefilter = `&& og.state= '${state}'`;
+            if (district_name) {
+                wherefilter = `&& d.district_name= '${district_name}'`;
             }
+            const RegInst = await db.query(`SELECT 
+            d.district_name,
+            COUNT(DISTINCT m.institution_id) AS totalRegInstitutions
+        FROM
+            institutions AS ins
+                JOIN
+            places AS p ON ins.place_id = p.place_id
+                JOIN
+            taluks AS t ON p.taluk_id = t.taluk_id
+                JOIN
+            blocks AS b ON t.block_id = b.block_id
+                JOIN
+            districts AS d ON b.district_id = d.district_id
+                JOIN
+            states AS s ON d.state_id = s.state_id
+                LEFT JOIN
+            mentors m ON ins.institution_id = m.institution_id
+        WHERE
+            ins.status = 'ACTIVE' ${wherefilter}
+        GROUP BY d.district_name;`, { type: QueryTypes.SELECT });
             const summary = await db.query(`SELECT 
-            og.state, COUNT(mn.mentor_id) AS totalReg
+            d.district_name,
+            COUNT(m.mentor_id) AS totalReg
         FROM
-            organizations AS og
+            institutions AS ins
+                JOIN
+            places AS p ON ins.place_id = p.place_id
+                JOIN
+            taluks AS t ON p.taluk_id = t.taluk_id
+                JOIN
+            blocks AS b ON t.block_id = b.block_id
+                JOIN
+            districts AS d ON b.district_id = d.district_id
+                JOIN
+            states AS s ON d.state_id = s.state_id
                 LEFT JOIN
-            mentors AS mn ON og.organization_code = mn.organization_code
-            WHERE og.status='ACTIVE' ${wherefilter}
-        GROUP BY og.state;`, { type: QueryTypes.SELECT });
+            mentors m ON ins.institution_id = m.institution_id
+        WHERE
+            ins.status = 'ACTIVE' ${wherefilter}
+        GROUP BY d.district_name;`, { type: QueryTypes.SELECT });
             const teamCount = await db.query(`SELECT 
-        og.state, COUNT(t.team_id) AS totalTeams
-    FROM
-        organizations AS og
-            LEFT JOIN
-        mentors AS mn ON og.organization_code = mn.organization_code
-            INNER JOIN
-        teams AS t ON mn.mentor_id = t.mentor_id
-        WHERE og.status='ACTIVE' ${wherefilter}
-    GROUP BY og.state;`, { type: QueryTypes.SELECT });
+            d.district_name, COUNT(te.team_id) AS totalTeams
+        FROM
+            institutions AS ins
+                JOIN
+            places AS p ON ins.place_id = p.place_id
+                JOIN
+            taluks AS t ON p.taluk_id = t.taluk_id
+                JOIN
+            blocks AS b ON t.block_id = b.block_id
+                JOIN
+            districts AS d ON b.district_id = d.district_id
+                JOIN
+            states AS s ON d.state_id = s.state_id
+                LEFT JOIN
+            mentors m ON ins.institution_id = m.institution_id
+                INNER JOIN
+            teams AS te ON m.mentor_id = te.mentor_id
+        WHERE
+            ins.status = 'ACTIVE' ${wherefilter}
+        GROUP BY d.district_name;`, { type: QueryTypes.SELECT });
             const studentCountDetails = await db.query(`SELECT 
-        og.state,
-        COUNT(st.student_id) AS totalstudent,
-        SUM(CASE
-            WHEN st.gender = 'MALE' THEN 1
-            ELSE 0
-        END) AS male,
-        SUM(CASE
-            WHEN st.gender = 'FEMALE' THEN 1
-            ELSE 0
-        END) AS female
-    FROM
-        organizations AS og
-            LEFT JOIN
-        mentors AS mn ON og.organization_code = mn.organization_code
-            INNER JOIN
-        teams AS t ON mn.mentor_id = t.mentor_id
-            INNER JOIN
-        students AS st ON st.team_id = t.team_id
-        WHERE og.status='ACTIVE' ${wherefilter}
-    GROUP BY og.state;`, { type: QueryTypes.SELECT });
-            const courseINcompleted = await db.query(`select state,count(*) as courseIN from (SELECT 
-            state,cou
+            d.district_name,
+            COUNT(st.student_id) AS totalstudent,
+            SUM(CASE
+                WHEN st.gender = 'MALE' THEN 1
+                ELSE 0
+            END) AS male,
+            SUM(CASE
+                WHEN st.gender = 'FEMALE' THEN 1
+                ELSE 0
+            END) AS female
         FROM
-            unisolve_db.organizations AS og
+            institutions AS ins
+                JOIN
+            places AS p ON ins.place_id = p.place_id
+                JOIN
+            taluks AS t ON p.taluk_id = t.taluk_id
+                JOIN
+            blocks AS b ON t.block_id = b.block_id
+                JOIN
+            districts AS d ON b.district_id = d.district_id
+                JOIN
+            states AS s ON d.state_id = s.state_id
                 LEFT JOIN
-            (SELECT 
-                organization_code, cou
-            FROM
-                unisolve_db.mentors AS mn
-            LEFT JOIN (SELECT 
-                user_id, COUNT(*) AS cou
-            FROM
-                unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)<8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE' ${wherefilter}
-        group by organization_id having cou<8) as final group by state;`, { type: QueryTypes.SELECT });
-            const courseCompleted = await db.query(`select state,count(*) as courseCMP from (SELECT 
-            state,cou
-        FROM
-            unisolve_db.organizations AS og
-                LEFT JOIN
-            (SELECT 
-                organization_code, cou
-            FROM
-                unisolve_db.mentors AS mn
-            LEFT JOIN (SELECT 
-                user_id, COUNT(*) AS cou
-            FROM
-                unisolve_db.mentor_topic_progress
-            GROUP BY user_id having count(*)>=8) AS t ON mn.user_id = t.user_id ) AS c ON c.organization_code = og.organization_code WHERE og.status='ACTIVE' ${wherefilter}
-        group by organization_id having cou>=8) as final group by state`, { type: QueryTypes.SELECT });
+            mentors m ON ins.institution_id = m.institution_id
+                INNER JOIN
+            teams AS te ON m.mentor_id = te.mentor_id
+                INNER JOIN
+            students AS st ON st.team_id = te.team_id
+        WHERE
+            ins.status = 'ACTIVE' ${wherefilter}
+        GROUP BY d.district_name;`, { type: QueryTypes.SELECT });
             data['summary'] = summary;
+            data['Regschool'] = RegInst;
             data['teamCount'] = teamCount;
             data['studentCountDetails'] = studentCountDetails;
-            data['courseCompleted'] = courseCompleted;
-            data['courseINcompleted'] = courseINcompleted;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
@@ -803,14 +781,14 @@ export default class ReportController extends BaseController {
             next(err)
         }
     }
-    private async refreshSchoolDReport(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    private async refreshInstDReport(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (res.locals.role !== 'ADMIN' && res.locals.role !== 'REPORT') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
-            const service = new SchoolDReportService()
-            await service.executeSchoolDReport()
-            const result = 'School Report SQL queries executed successfully.'
+            const service = new InstDReportService()
+            await service.executeInstDReport()
+            const result = 'Institution Report SQL queries executed successfully.'
             res.status(200).json(dispatcher(res, result, "success"))
         } catch (err) {
             next(err);
