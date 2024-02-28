@@ -7,14 +7,14 @@ export default class StudentDReportService extends BaseService {
      * @returns Object 
      */
     executeStudentDReport = async () => {
-       const removeDtat = `truncate student_report;`
-       const StuData = `
-       INSERT INTO student_report(student_id,student_name,Age,gender,Grade,team_id,user_id,disability)
+        const removeDtat = `truncate student_report;`
+        const StuData = `INSERT INTO student_report(student_id,institution_course_id,student_full_name,Age,gender,team_id,user_id,year_of_study,date_of_birth,mobile,email)
        SELECT 
-           student_id,full_name, Age, gender, Grade,team_id,user_id,disability
+           student_id,institution_course_id,student_full_name, Age, gender,team_id,user_id,year_of_study,date_of_birth,mobile,email
        FROM
-           students;`
-           const teamData = ` 
+           students;
+       `
+        const teamData = ` 
        UPDATE student_report AS d
                JOIN
            (SELECT 
@@ -24,128 +24,89 @@ export default class StudentDReportService extends BaseService {
        SET 
            d.team_name = s.team_name,
            d.mentor_id = s.mentor_id;`
-           const mentorData =`UPDATE student_report AS d
+        const mentorData = `UPDATE student_report AS d
            JOIN
        (SELECT 
            mentor_id,
-               mentors.full_name,
-               gender,
-               mobile,
-               whatapp_mobile,
-               organization_code,
-               username
+               mentor_name,
+               mentor_mobile,
+               mentor_email,
+               institution_id
        FROM
            mentors
        JOIN users ON mentors.user_id = users.user_id) AS s ON d.mentor_id = s.mentor_id 
    SET 
-       d.teacher_name = s.full_name,
-       d.teacher_gender = s.gender,
-       d.teacher_contact = s.mobile,
-       d.teacher_whatsapp_contact = s.whatapp_mobile,
-       d.udise_code = s.organization_code,
-       d.teacher_email = s.username;
+       d.mentor_name = s.mentor_name,
+       d.mentor_mobile = s.mentor_mobile,
+       d.mentor_email = s.mentor_email,
+       d.institution_id = s.institution_id;
        `
-           const orgData =`UPDATE student_report AS d
-           JOIN
-       (SELECT 
-           organization_code,
-               organization_name,
-               district,
-               category,
-               city,
-               status,
-               principal_name,
-               principal_mobile,
-               unique_code,
-               state
-       FROM
-           organizations) AS s ON d.udise_code = s.organization_code 
-   SET 
-       d.school_name = s.organization_name,
-       d.district = s.district,
-       d.category = s.category,
-       d.city = s.city,
-       d.status = s.status,
-       d.hm_name = s.principal_name,
-       d.hm_contact = s.principal_mobile,
-       d.unique_code = s.unique_code,
-       d.state = s.state;`
-           const usernameDtat = `   
-       UPDATE student_report AS d
-               JOIN
-           (SELECT 
-               user_id, username
-           FROM
-               users
-           WHERE
-               role = 'STUDENT') AS s ON d.user_id = s.user_id 
-       SET 
-           d.student_username = s.username;`
-           const updatePostSurvey = `      
-       UPDATE student_report AS d
-               JOIN
-           (SELECT 
-               CASE
-                       WHEN status = 'ACTIVE' THEN 'Completed'
-                   END AS 'post_survey_status',
-                   user_id
-           FROM
-               quiz_survey_responses
-           WHERE
-               quiz_survey_id = 4) AS s ON d.user_id = s.user_id 
-       SET 
-           d.post_survey_status = s.post_survey_status;`
-           const ideaStatusData =`      
-       UPDATE student_report AS d
-               JOIN
-           (SELECT 
-               team_id, status
-           FROM
-               challenge_responses) AS s ON d.team_id = s.team_id 
-       SET 
-           d.idea_status = s.status;`
-           const userTopicData =`     
-       UPDATE student_report AS d
-               JOIN
-           (SELECT 
-               COUNT(*) AS user_count, user_id
-           FROM
-               user_topic_progress
-           GROUP BY user_id) AS s ON d.user_id = s.user_id 
-       SET 
-           d.course_status = s.user_count;
-       `
+        const orgData = `UPDATE student_report AS d
+        JOIN
+    (SELECT 
+        institution_id,
+            state_name,
+            district_name,
+            block_name,
+            taluk_name,
+            place_name,
+            institution_code,
+            institution_name,
+            principal_name,
+            principal_mobile,
+            principal_whatsapp_mobile,
+            principal_email
+    FROM
+        institutions AS ins
+    JOIN places AS p ON ins.place_id = p.place_id
+    JOIN taluks AS t ON p.taluk_id = t.taluk_id
+    JOIN blocks AS b ON t.block_id = b.block_id
+    JOIN districts AS d ON b.district_id = d.district_id
+    JOIN states AS s ON d.state_id = s.state_id) AS s ON d.institution_id = s.institution_id 
+SET 
+    d.state_name = s.state_name,
+    d.district_name = s.district_name,
+    d.block_name = s.block_name,
+    d.taluk_name = s.taluk_name,
+    d.place_name = s.place_name,
+    d.institution_code = s.institution_code,
+    d.institution_name = s.institution_name,
+    d.principal_name = s.principal_name,
+    d.principal_mobile = s.principal_mobile,
+    d.principal_whatsapp_mobile = s.principal_whatsapp_mobile,
+    d.principal_email = s.principal_email;`
+        const ideaStatusData = `  
+        UPDATE student_report AS d
+        JOIN
+    (SELECT 
+        team_id, status
+    FROM
+        ideas) AS s ON d.team_id = s.team_id 
+SET 
+    d.idea_status = s.status;    
+      `
         try {
-          await db.query(removeDtat,{
-            type: QueryTypes.RAW,
-          });
-          await db.query(StuData,{
-            type: QueryTypes.RAW,
-          });
-          await db.query(teamData,{
-            type: QueryTypes.RAW,
-          });
-          await db.query(mentorData,{
-            type: QueryTypes.RAW,
-          });
-          await db.query(orgData,{
-            type: QueryTypes.RAW,
-          });
-          await db.query(usernameDtat,{
-            type: QueryTypes.RAW,
-          });
-          await db.query(updatePostSurvey,{
-            type: QueryTypes.RAW,
-          });
-          await db.query(ideaStatusData,{
-            type: QueryTypes.RAW,
-          });
-          await db.query(userTopicData,{
-            type: QueryTypes.RAW,
-          });
-          console.log('Student Report SQL queries executed successfully.');
+            await db.query(removeDtat, {
+                type: QueryTypes.RAW,
+            });
+            await db.query(StuData, {
+                type: QueryTypes.RAW,
+            });
+            await db.query(teamData, {
+                type: QueryTypes.RAW,
+            });
+            await db.query(mentorData, {
+                type: QueryTypes.RAW,
+            });
+            await db.query(orgData, {
+                type: QueryTypes.RAW,
+            });
+            await db.query(ideaStatusData, {
+                type: QueryTypes.RAW,
+            });
+            console.log('Student Report SQL queries executed successfully.');
         } catch (error) {
-          console.error('Error executing SQL queries:', error);
+            console.error('Error executing SQL queries:', error);
         }
-      };
+    };
 }
