@@ -13,6 +13,7 @@ import { HttpsProxyAgent } from "https-proxy-agent";
 import db from "../utils/dbconnection.util";
 import { evaluation_process } from "../models/evaluation_process.model";
 import { constents } from "../configs/constents.config";
+import { evaluator_rating } from "../models/evaluator_rating.model";
 
 export default class ideasController extends BaseController {
 
@@ -31,6 +32,508 @@ export default class ideasController extends BaseController {
         this.router.get(this.path + '/fetchRandomChallenge', this.getRandomChallenge.bind(this));
         super.initializeRoutes();
     }
+    protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'EADMIN' && res.locals.role !== 'STATE'){
+            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        }
+        let user_id = res.locals.user_id || res.locals.state_coordinators_id;
+        let newREQQuery : any = {}
+            if(req.query.Data){
+                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery  = JSON.parse(newQuery);
+            }else if(Object.keys(req.query).length !== 0){
+                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            }
+        let { team_id } = newREQQuery;
+        if (!user_id) {
+            throw unauthorized(speeches.UNAUTHORIZED_ACCESS)
+        }
+        let data: any;
+        let responseOfFindAndCountAll: any;
+        const { model, id } = req.params;
+        const paramStatus: any = newREQQuery.status;
+        const evaluation_status: any = newREQQuery.evaluation_status;
+        const district: any = newREQQuery.district;
+        const sub_category: any = newREQQuery.sub_category;
+        const sdg: any = newREQQuery.sdg;
+        const rejected_reason: any = newREQQuery.rejected_reason;
+        const rejected_reasonSecond: any = newREQQuery.rejected_reasonSecond;
+        const evaluator_id: any = JSON.stringify(newREQQuery.evaluator_id);
+        const level: any = newREQQuery.level;
+        const yetToProcessList: any = newREQQuery.yetToProcessList;
+        if (model) {
+            this.model = model;
+        };
+        // pagination
+        const { page, size, title } = newREQQuery;
+        let condition: any = {};
+        if (team_id) {
+            condition = { team_id };
+        }
+        const { limit, offset } = this.getPagination(page, size);
+        const modelClass = await this.loadModel(model).catch(error => {
+            next(error)
+        });
+        const where: any = {};
+        let whereClauseStatusPart: any = {}
+        let additionalFilter: any = {};
+        let boolStatusWhereClauseEvaluationStatusRequired = false;
+        //status filter
+        if (paramStatus && (paramStatus in constents.challenges_flags.list)) {
+            whereClauseStatusPart = { "status": paramStatus };
+            boolStatusWhereClauseEvaluationStatusRequired = true;
+        } else if (paramStatus === 'ALL') {
+            whereClauseStatusPart = {};
+            boolStatusWhereClauseEvaluationStatusRequired = false;
+        } else {
+            whereClauseStatusPart = { "status": "SUBMITTED" };
+            boolStatusWhereClauseEvaluationStatusRequired = true;
+        };
+        //evaluation status filter
+        if (evaluation_status) {
+            if (evaluation_status in constents.evaluation_status.list) {
+                whereClauseStatusPart = { 'evaluation_status': evaluation_status };
+            } else {
+                whereClauseStatusPart['evaluation_status'] = null;
+            }
+        }
+        if (sdg) {
+            additionalFilter['sdg'] = sdg && typeof sdg == 'string' ? sdg : {}
+        }
+        
+        if (rejected_reason) {
+            additionalFilter['rejected_reason'] = rejected_reason && typeof rejected_reason == 'string' ? rejected_reason : {}
+        }
+        if (rejected_reasonSecond) {
+            additionalFilter['rejected_reasonSecond'] = rejected_reasonSecond && typeof rejected_reasonSecond == 'string' ? rejected_reasonSecond : {}
+        }
+        if (evaluator_id) {
+            additionalFilter['evaluated_by'] = evaluator_id && typeof evaluator_id == 'string' ? evaluator_id : {}
+        }
+        if (district) {
+            additionalFilter["district"] = district && typeof district == 'string' ? district : {}
+        }
+        if (sub_category) {
+            additionalFilter["sub_category"] = sub_category && typeof sub_category == 'string' ? sub_category : {}
+        }
+        if (id) {
+            const newParamId = await this.authService.decryptGlobal(req.params.id);
+            where[`${this.model}_id`] = newParamId;
+            try {
+                if (level && typeof level == 'string') {
+                    switch (level) {
+                        case 'L1':
+                            data = await this.crudService.findOne(modelClass, {
+                                attributes: [
+                                    "challenge_response_id",
+                                    "challenge_id",
+                                    "sdg",
+                                    "state",
+                                    "sub_category",
+                                    "team_id",
+                                    "response",
+                                    "initiated_by",
+                                    "created_at",
+                                    "submitted_at",
+                                    "evaluated_by",
+                                    "evaluated_at",
+                                    "evaluation_status",
+                                    "status",
+                                    "rejected_reason",
+                                    "rejected_reasonSecond",
+                                    [
+                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
+                                    ]
+                                ],
+                                where: {
+                                    [Op.and]: [
+                                        where,
+                                        condition
+                                    ]
+                                }
+                            });
+                            break;
+                        case 'L2':
+                            data = await this.crudService.findOne(modelClass, {
+                                attributes: [
+                                    "challenge_response_id",
+                                    "challenge_id",
+                                    "sdg",
+                                    "state",
+                                    "sub_category",
+                                    "team_id",
+                                    "response",
+                                    "initiated_by",
+                                    "created_at",
+                                    "submitted_at",
+                                    "evaluated_by",
+                                    "evaluated_at",
+                                    "evaluation_status",
+                                    "status",
+                                    "rejected_reason",
+                                    "rejected_reasonSecond",
+                                    [
+                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
+                                    ]
+                                ],
+                                where: {
+                                    [Op.and]: [
+                                        where,
+                                        condition
+                                    ]
+                                },
+                                include: {
+                                    model: evaluator_rating,
+                                    required: false,
+                                    attributes: [
+                                        'evaluator_rating_id',
+                                        'evaluator_id',
+                                        'challenge_response_id',
+                                        'status',
+                                        'level',
+                                        'param_1',
+                                        'param_2',
+                                        'param_3',
+                                        'param_4',
+                                        'param_5',
+                                        'comments',
+                                        'overall',
+                                        'submitted_at',
+                                        "created_at",
+                                        [
+                                            db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = evaluator_ratings.created_by)`), 'rated_evaluated_name'
+                                        ]
+                                    ]
+                                }
+                            });
+                            break;
+                        case level != 'L1' && 'L2':
+                            break;
+                    }
+                }
+                data = await this.crudService.findOne(modelClass, {
+                    attributes: [
+                        "challenge_response_id",
+                        "challenge_id",
+                        "sdg",
+                        "state",
+                        "sub_category",
+                        "team_id",
+                        "response",
+                        "initiated_by",
+                        "created_at",
+                        "submitted_at",
+                        "evaluated_by",
+                        "evaluated_at",
+                        "evaluation_status",
+                        "status",
+                        "rejected_reason",
+                        "rejected_reasonSecond",
+                        [
+                            db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_name'
+                        ],
+                        [
+                            db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                        ],
+                        [
+                            db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
+                        ]
+                    ],
+                    where: {
+                        [Op.and]: [
+                            where,
+                            condition
+                        ]
+                    }
+                });
+            } catch (error) {
+                return res.status(500).send(dispatcher(res, data, 'error'))
+            }
+            data.dataValues.response = JSON.parse(data.dataValues.response);
+        } else {
+            try {
+                if (level && typeof level == 'string') {
+                    switch (level) {
+                        case 'L1':
+                            whereClauseStatusPart['status'] = "SUBMITTED";
+                            if (yetToProcessList) {
+                                if (yetToProcessList && yetToProcessList == 'L1') {
+                                    whereClauseStatusPart['evaluation_status'] = {
+                                        [Op.or]: [
+                                            { [Op.is]: null }, ''
+                                        ]
+                                    }
+                                }
+                            }
+                            responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
+                                attributes: [
+                                    "challenge_response_id",
+                                    "challenge_id",
+                                    "sdg",
+                                    "state",
+                                    "sub_category",
+                                    "team_id",
+                                    "response",
+                                    "initiated_by",
+                                    "created_at",
+                                    "submitted_at",
+                                    "evaluated_by",
+                                    "evaluated_at",
+                                    "evaluation_status",
+                                    "status",
+                                    "rejected_reason",
+                                    "rejected_reasonSecond",
+                                    "final_result", "district",
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`challenge_response\`.\`team_id\` )`), 'team_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT JSON_ARRAYAGG(full_name) FROM unisolve_db.students  AS s LEFT OUTER JOIN unisolve_db.teams AS t ON s.team_id = t.team_id WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_members'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT mentorTeamOrg.organization_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT mentorTeamOrg.organization_code FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id = \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_code'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mentor_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT mentorTeamOrg.category FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'category'
+                                    ]
+                                ],
+                                where: {
+                                    [Op.and]: [
+                                        condition,
+                                        whereClauseStatusPart,
+                                        additionalFilter,
+                                    ]
+                                }, limit, offset,
+                            });
+                            break;
+                        case 'L2':
+                            // cleaning up the repeated code: observation everything is same except the having groupBy clause so separating both of them based the parameter
+                            let havingClausePart: any;
+                            let groupByClausePart: any;
+                            whereClauseStatusPart['evaluation_status'] = "SELECTEDROUND1";
+                            whereClauseStatusPart['final_result'] = null;
+                            if (yetToProcessList) {
+                                if (yetToProcessList && yetToProcessList == 'L2') {
+                                    groupByClausePart = [`challenge_response.challenge_response_id`];
+                                    havingClausePart = db.Sequelize.where(db.Sequelize.fn('count', db.Sequelize.col(`evaluator_ratings.challenge_response_id`)), {
+                                        [Op.lt]: 3
+                                    })
+                                }
+                            } else {
+                                groupByClausePart = [`evaluator_ratings.challenge_response_id`];
+                                havingClausePart = db.Sequelize.where(db.Sequelize.fn('count', db.Sequelize.col(`evaluator_ratings.challenge_response_id`)), {
+                                    [Op.gte]: 3
+                                })
+                            }
+                            responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
+                                attributes: [
+                                    "challenge_response_id",
+                                    "challenge_id",
+                                    "sdg",
+                                    "state",
+                                    "sub_category",
+                                    "team_id",
+                                    "response",
+                                    "initiated_by",
+                                    "created_at",
+                                    "submitted_at",
+                                    "evaluated_by",
+                                    "evaluated_at",
+                                    "evaluation_status",
+                                    "status",
+                                    "rejected_reason",
+                                    "rejected_reasonSecond",
+                                    "final_result", "district",
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`challenge_response\`.\`team_id\` )`), 'team_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT JSON_ARRAYAGG(full_name) FROM unisolve_db.students  AS s LEFT OUTER JOIN unisolve_db.teams AS t ON s.team_id = t.team_id WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_members'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT mentorTeamOrg.organization_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT mentorTeamOrg.organization_code FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_code'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mentor_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT mentorTeamOrg.category FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'category'
+                                    ]
+                                ],
+                                where: {
+                                    [Op.and]: [
+                                        condition,
+                                        whereClauseStatusPart,
+                                        additionalFilter,
+                                    ]
+                                },
+                                include: [{
+                                    model: evaluator_rating,
+                                    where: { level: 'L2' },
+                                    required: false,
+                                    attributes: [
+                                        [
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_1) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_1'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_2'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_3) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_3'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_4) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_4'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_5) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_5'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(comments) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'comments'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(overall) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'overall'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT ROUND(AVG(CAST(overall AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'overall_avg'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(created_at) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'created_at'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(evaluator_id) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'evaluator_id'
+                                        ],
+                                        [
+                                            db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = evaluator_ratings.created_by)`), 'rated_evaluated_name'
+                                        ]
+                                    ]
+                                }],
+                                group: groupByClausePart,
+                                having: havingClausePart,
+                                subQuery: false,
+                                limit, offset,
+                            });
+                            responseOfFindAndCountAll.count = responseOfFindAndCountAll.count.length
+                            break;
+                        case level !== 'L1' && 'L2':
+                            break;
+                    }
+                } else {
+                    responseOfFindAndCountAll = await this.crudService.findAndCountAll(ideas, {
+                        attributes: [
+                            "idea_id",
+                            "financial_year_id",
+                            "theme_problem_id",
+                            "team_id",
+                            "idea_title",
+                            "solution_statement",
+                            "detailed_solution",
+                            "prototype_available",
+                            "Prototype_file",
+                            "idea_available",
+                            "self_declaration",
+                            "status",
+                            "initiated_by",
+                            "submitted_at",
+                            "created_by",
+                            "created_at",
+                            "verified_by",
+                            "verified_at",
+                            "district",
+                            // [
+                            //     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
+                            // ],
+                            // [
+                            //     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`initiated_by\` )`), 'initiated_name'
+                            // ],
+                            [
+                                db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`ideas\`.\`team_id\` )`), 'team_name'
+                            ],
+                            // [
+                            //     db.literal(`(SELECT JSON_ARRAYAGG(full_name) FROM unisolve_db.students  AS s LEFT OUTER JOIN unisolve_db.teams AS t ON s.team_id = t.team_id WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_members'
+                            // ],
+                            // [
+                            //     db.literal(`(SELECT mentorTeamOrg.organization_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_name'
+                            // ],
+                            // [
+                            //     db.literal(`(SELECT mentorTeamOrg.organization_code FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_code'
+                            // ],
+                            // [
+                            //     db.literal(`(SELECT full_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mentor_name'
+                            // ],
+                            // [
+                            //     db.literal(`(SELECT mobile FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mobile'
+                            // ]
+                        ],
+                        include: {
+                            model: themes_problems,
+                            attributes: [
+                                "theme_problem_id",
+                                "theme_name",
+                                "problem_statement",
+                                "problem_statement_description",
+                                "status"
+                            ]
+                        },
+                        where: {
+                            [Op.and]: [
+                                condition,
+                                whereClauseStatusPart,
+                                additionalFilter,
+                            ]
+                        }, limit, offset,
+                    });
+                }
+                const result = this.getPagingData(responseOfFindAndCountAll, page, limit);
+                data = result;
+            } catch (error: any) {
+                return res.status(500).send(dispatcher(res, data, 'error'))
+            }
+            //data.dataValues.forEach((element: any) => { element.dataValues.response = JSON.parse(element.dataValues.response) })
+        }
+        if (!data || data instanceof Error) {
+            if (data != null) {
+                throw notFound(data.message)
+            } else {
+                throw notFound()
+            }
+            res.status(200).send(dispatcher(res, null, "error", speeches.DATA_NOT_FOUND));
+            // (data.message)
+        }
+        return res.status(200).send(dispatcher(res, data, 'success'));
+    };
     protected async initiateIdeaop(req: Request, res: Response, next: NextFunction) {
         // if(res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' ){
         //     return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
