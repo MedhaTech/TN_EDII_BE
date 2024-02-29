@@ -44,8 +44,6 @@ export default class ReportController extends BaseController {
         this.router.get(`${this.path}/mentorRegList`, this.getMentorRegList.bind(this));
         this.router.get(this.path + "/notRegistered", this.notRegistered.bind(this));
         this.router.get(this.path + "/mentorsummary", this.mentorsummary.bind(this));
-        this.router.get(`${this.path}/mentorSurvey`, this.getmentorSurvey.bind(this));
-        this.router.get(`${this.path}/studentSurvey`, this.getstudentSurvey.bind(this));
         this.router.get(`${this.path}/studentdetailsreport`, this.getstudentDetailsreport.bind(this));
         this.router.get(`${this.path}/mentordetailsreport`, this.getmentorDetailsreport.bind(this));
         this.router.get(`${this.path}/mentordetailstable`, this.getmentorDetailstable.bind(this));
@@ -53,12 +51,10 @@ export default class ReportController extends BaseController {
         this.router.get(`${this.path}/refreshInstDReport`, this.refreshInstDReport.bind(this));
         this.router.get(`${this.path}/refreshStudentDReport`, this.refreshStudentDReport.bind(this));
         this.router.get(`${this.path}/refreshIdeaReport`, this.refreshIdeaReport.bind(this));
-        this.router.get(`${this.path}/studentATLnonATLcount`, this.getstudentATLnonATLcount.bind(this));
         this.router.get(`${this.path}/ideadeatilreport`, this.getideaReport.bind(this));
         this.router.get(`${this.path}/L1deatilreport`, this.getL1Report.bind(this));
         this.router.get(`${this.path}/L2deatilreport`, this.getL2Report.bind(this));
         this.router.get(`${this.path}/L3deatilreport`, this.getL3Report.bind(this));
-        this.router.get(`${this.path}/ideaReportTable`, this.getideaReportTable.bind(this));
         this.router.get(`${this.path}/L1ReportTable1`, this.getL1ReportTable1.bind(this));
         this.router.get(`${this.path}/L1ReportTable2`, this.getL1ReportTable2.bind(this));
         this.router.get(`${this.path}/L2ReportTable1`, this.getL2ReportTable1.bind(this));
@@ -133,7 +129,6 @@ export default class ReportController extends BaseController {
             next(err)
         }
     }
-
     protected async notRegistered(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (res.locals.role !== 'ADMIN' && res.locals.role !== 'REPORT' && res.locals.role !== 'STATE') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
@@ -205,7 +200,6 @@ export default class ReportController extends BaseController {
             next(err)
         }
     }
-
     protected async mentorsummary(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         if (res.locals.role !== 'ADMIN' && res.locals.role !== 'REPORT' && res.locals.role !== 'STATE') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
@@ -321,92 +315,6 @@ export default class ReportController extends BaseController {
                     ins.status = 'ACTIVE'
                 GROUP BY d.district_name) AS org;`, { type: QueryTypes.SELECT });
             }
-            data = summary;
-            if (!data) {
-                throw notFound(speeches.DATA_NOT_FOUND)
-            }
-            if (data instanceof Error) {
-                throw data
-            }
-            res.status(200).send(dispatcher(res, data, "success"))
-        } catch (err) {
-            next(err)
-        }
-    }
-    protected async getmentorSurvey(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'REPORT') {
-            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
-        }
-        try {
-            let newREQQuery: any = {}
-            if (req.query.Data) {
-                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery = JSON.parse(newQuery);
-            } else if (Object.keys(req.query).length !== 0) {
-                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
-            }
-            const id = newREQQuery.id;
-            let data: any = {}
-            const summary = await db.query(`SELECT 
-            mn.organization_code AS 'UDISE Code',
-            og.organization_name AS 'School Name',
-            og.category AS Category,
-            og.district AS District,
-            og.city AS City,
-            og.principal_name AS 'HM Name',
-            og.principal_mobile AS 'HM Contact',
-            mn.full_name AS 'Name'
-        FROM
-            ((unisolve_db.quiz_survey_responses AS qz
-            INNER JOIN unisolve_db.mentors AS mn ON qz.user_id = mn.user_id
-                AND quiz_survey_id = ${id})
-            INNER JOIN unisolve_db.organizations AS og ON mn.organization_code = og.organization_code)
-        WHERE
-            og.status = 'ACTIVE';`, { type: QueryTypes.SELECT });
-            data = summary;
-            if (!data) {
-                throw notFound(speeches.DATA_NOT_FOUND)
-            }
-            if (data instanceof Error) {
-                throw data
-            }
-            res.status(200).send(dispatcher(res, data, "success"))
-        } catch (err) {
-            next(err)
-        }
-    }
-    protected async getstudentSurvey(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'REPORT') {
-            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
-        }
-        try {
-            let newREQQuery: any = {}
-            if (req.query.Data) {
-                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery = JSON.parse(newQuery);
-            } else if (Object.keys(req.query).length !== 0) {
-                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
-            }
-            const id = newREQQuery.id;
-            let data: any = {}
-            const summary = await db.query(`SELECT 
-            mn.organization_code AS 'UDISE Code',
-            og.organization_name AS 'School Name',
-            og.category AS Category,
-            og.district AS District,
-            og.city AS City,
-            og.principal_name AS 'HM Name',
-            og.principal_mobile AS 'HM Contact',
-            st.full_name AS 'Name'
-        FROM
-            ((((unisolve_db.quiz_survey_responses AS qz
-            INNER JOIN unisolve_db.students AS st ON qz.user_id = st.user_id
-                AND quiz_survey_id = ${id})
-            INNER JOIN unisolve_db.teams AS t ON st.team_id = t.team_id)
-            INNER JOIN unisolve_db.mentors AS mn ON t.mentor_id = mn.mentor_id)
-            INNER JOIN unisolve_db.organizations AS og ON mn.organization_code = og.organization_code)
-        WHERE
-            og.status = 'ACTIVE'; `, { type: QueryTypes.SELECT });
             data = summary;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
@@ -770,59 +678,6 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
             next(err);
         }
     }
-    protected async getstudentATLnonATLcount(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'REPORT' && res.locals.role !== 'STATE') {
-            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
-        }
-        try {
-            let data: any = {}
-            let newREQQuery: any = {}
-            if (req.query.Data) {
-                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery = JSON.parse(newQuery);
-            } else if (Object.keys(req.query).length !== 0) {
-                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
-            }
-            const state = newREQQuery.state;
-            let wherefilter = '';
-            if (state) {
-                wherefilter = `WHERE org.state= '${state}'`;
-            }
-            const summary = await db.query(`SELECT 
-            org.state, COALESCE(ATL_Student_Count, 0) as ATL_Student_Count, COALESCE(NONATL_Student_Count, 0) as NONATL_Student_Count
-        FROM
-            organizations AS org
-               left JOIN
-            (SELECT 
-                o.state,
-                    COUNT(CASE
-                        WHEN o.category = 'ATL' THEN 1
-                    END) AS ATL_Student_Count,
-                    COUNT(CASE
-                        WHEN o.category = 'Non ATL' THEN 1
-                    END) AS NONATL_Student_Count
-            FROM
-                students AS s
-            JOIN teams AS t ON s.team_id = t.team_id
-            JOIN mentors AS m ON t.mentor_id = m.mentor_id
-            JOIN organizations AS o ON m.organization_code = o.organization_code
-            WHERE
-                o.status = 'ACTIVE'
-            GROUP BY o.state) AS t2 ON org.state = t2.state
-            ${wherefilter}
-        GROUP BY org.state;`, { type: QueryTypes.SELECT });
-            data = summary;
-            if (!data) {
-                throw notFound(speeches.DATA_NOT_FOUND)
-            }
-            if (data instanceof Error) {
-                throw data
-            }
-            res.status(200).send(dispatcher(res, data, "success"))
-        } catch (err) {
-            next(err)
-        }
-    }
     private async refreshIdeaReport(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const service = new IdeaReportService()
@@ -846,45 +701,42 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { state, district, sdg, category } = newREQQuery;
-            let districtFilter: any = `'%%'`
-            let categoryFilter: any = `'%%'`
-            let stateFilter: any = `'%%'`
-            let themesFilter: any = `'%%'`
-            if (district !== 'All Districts' && district !== undefined) {
-                districtFilter = `'${district}'`
+            const district_name = newREQQuery.district_name;
+            let wherefilter = '';
+            if (district_name !== 'All Districts') {
+                wherefilter = `where district_name= '${district_name}'`;
             }
-            if (category !== 'All Categorys' && category !== undefined) {
-                categoryFilter = `'${category}'`
-            }
-            if (state !== 'All States' && state !== undefined) {
-                stateFilter = `'${state}'`
-            }
-            if (sdg !== 'All Themes' && sdg !== undefined) {
-                themesFilter = `'${sdg}'`
-            }
-            const summary = await db.query(`SELECT 
-            organization_code,
-            unique_code,
-            state,
-            district,
-            challenge_response_id,
-            organization_name,
-            category,
-            pin_code,
-            address,
-            full_name,
-            email,
-            mobile,
+            data = await db.query(`
+            SELECT 
+            institution_code,
+            institution_name,
+            state_name,
+            district_name,
+            block_name,
+            taluk_name,
+            place_name,
+            principal_name,
+            principal_mobile,
+            principal_email,
+            mentor_name,
+            mentor_mobile,
+            mentor_email,
             team_name,
-            students_names AS 'Students names',
-            sdg,
-            sub_category,
-            response
+            students_names,
+            idea_title,
+            solution_statement,
+            detailed_solution,
+            prototype_available,
+            Prototype_file,
+            idea_available,
+            self_declaration,
+            theme_name,
+            problem_statement,
+            problem_statement_description
         FROM
-            idea_report
-            where status = 'SUBMITTED' && state like ${stateFilter} && district like ${districtFilter} && sdg like ${themesFilter} && category like ${categoryFilter};`, { type: QueryTypes.SELECT });
-            data = summary;
+            idea_report AS i
+        JOIN
+                themes_problems AS t ON i.theme_problem_id = t.theme_problem_id ${wherefilter}`, { type: QueryTypes.SELECT });
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
@@ -1082,95 +934,6 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
         FROM
             idea_report
             where final_result <>'null' && state like ${stateFilter} && district like ${districtFilter} && sdg like ${themesFilter} && category like ${categoryFilter};`, { type: QueryTypes.SELECT });
-            data = summary;
-            if (!data) {
-                throw notFound(speeches.DATA_NOT_FOUND)
-            }
-            if (data instanceof Error) {
-                throw data
-            }
-            res.status(200).send(dispatcher(res, data, "success"))
-        } catch (err) {
-            next(err)
-        }
-    }
-    protected async getideaReportTable(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'REPORT') {
-            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
-        }
-        try {
-            let data: any = {}
-            let newREQQuery: any = {}
-            if (req.query.Data) {
-                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery = JSON.parse(newQuery);
-            } else if (Object.keys(req.query).length !== 0) {
-                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
-            }
-            const state = newREQQuery.state;
-            let wherefilter = '';
-            if (state) {
-                wherefilter = `WHERE org.state= '${state}'`;
-            }
-            const summary = await db.query(`SELECT 
-            org.state,
-            COALESCE(totalSubmited, 0) AS totalSubmited,
-            COALESCE(ATL_Count, 0) AS ATL_Count,
-            COALESCE(NonATL_Count, 0) AS NonATL_Count,
-            COALESCE(Agriculture, 0) AS Agriculture,
-            COALESCE(Inclusivity, 0) AS Inclusivity,
-            COALESCE(Mobility, 0) AS Mobility,
-            COALESCE(DisasterManagement, 0) AS DisasterManagement,
-            COALESCE(Space, 0) AS Space,
-            COALESCE(Health, 0) AS Health,
-            COALESCE(EducationSkillDevelopment, 0) AS EducationSkillDevelopment,
-            COALESCE(OTHERS, 0) AS OTHERS
-        FROM
-            organizations AS org
-                LEFT JOIN
-            (SELECT 
-                COUNT(*) AS totalSubmited,
-                    COUNT(CASE
-                        WHEN org.category = 'ATL' THEN 1
-                    END) AS ATL_Count,
-                    COUNT(CASE
-                        WHEN org.category = 'Non ATL' THEN 1
-                    END) AS NonATL_Count,
-                    COUNT(CASE
-                        WHEN cal.sdg = 'Agriculture' THEN 1
-                    END) AS Agriculture,
-                    COUNT(CASE
-                        WHEN cal.sdg = 'Inclusivity' THEN 1
-                    END) AS Inclusivity,
-                    COUNT(CASE
-                        WHEN cal.sdg = 'Mobility' THEN 1
-                    END) AS Mobility,
-                    COUNT(CASE
-                        WHEN cal.sdg = 'Disaster Management' THEN 1
-                    END) AS DisasterManagement,
-                    COUNT(CASE
-                        WHEN cal.sdg = 'Health' THEN 1
-                    END) AS Health,
-                    COUNT(CASE
-                        WHEN cal.sdg = 'Space' THEN 1
-                    END) AS Space,
-                    COUNT(CASE
-                        WHEN cal.sdg = 'Education & Skill Development' THEN 1
-                    END) AS EducationSkillDevelopment,
-                    COUNT(CASE
-                        WHEN cal.sdg = 'OTHERS' THEN 1
-                    END) AS OTHERS,
-                    org.state
-            FROM
-                challenge_responses AS cal
-            JOIN teams AS t ON cal.team_id = t.team_id
-            JOIN mentors AS m ON t.mentor_id = m.mentor_id
-            JOIN organizations AS org ON m.organization_code = org.organization_code
-            WHERE
-                cal.status = 'SUBMITTED'
-            GROUP BY org.state) AS t2 ON org.state = t2.state
-            ${wherefilter}
-        GROUP BY org.state`, { type: QueryTypes.SELECT });
             data = summary;
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
