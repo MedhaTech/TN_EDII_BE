@@ -232,10 +232,32 @@ export default class StudentController extends BaseController {
                     const responseOfFindAndCountAll = await db.query(`SELECT 
                     student_id,
                     institution_course_id,
+                    (SELECT 
+                            CONCAT(it.institution_type,
+                                        '-',
+                                        st.stream_name,
+                                        '-',
+                                        p.program_name,
+                                        '-',
+                                        p.program_type,
+                                        '-',
+                                        p.no_of_years,
+                                        ' Years') AS output
+                        FROM
+                            institutional_courses AS inct
+                                JOIN
+                            institution_types AS it ON inct.institution_type_id = it.institution_type_id
+                                JOIN
+                            streams AS st ON inct.stream_id = st.stream_id
+                                JOIN
+                            programs AS p ON inct.program_id = p.program_id
+                        WHERE
+                            inct.institution_course_id = st.institution_course_id) AS course_name,
                     year_of_study,
                     st.financial_year_id,
                     st.user_id,
                     st.team_id,
+                    team_name,
                     student_full_name,
                     st.date_of_birth,
                     mobile,
