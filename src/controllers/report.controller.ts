@@ -704,7 +704,7 @@ WHERE
     ins.status = 'ACTIVE' ${wherefilter}
 GROUP BY d.district_name`, { type: QueryTypes.SELECT });
             const draftCount = await db.query(`SELECT 
-            d.district_name, COUNT(te.team_id) AS submittedCount
+            d.district_name, COUNT(te.team_id) AS draftCount
         FROM
             teams AS te
                 JOIN
