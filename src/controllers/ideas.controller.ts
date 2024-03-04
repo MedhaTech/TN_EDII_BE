@@ -1103,7 +1103,7 @@ export default class ideasController extends BaseController {
                                 attributes: [
                                     'evaluator_rating_id',
                                     'evaluator_id',
-                                    'challenge_response_id',
+                                    'idea_id',
                                     'status',
                                     'level',
                                     'param_1',
@@ -1137,7 +1137,6 @@ export default class ideasController extends BaseController {
             if (data instanceof Error) {
                 throw data;
             }
-            data.forEach((element: any) => { element.dataValues.response = JSON.parse(element.dataValues.response) })
             return res.status(200).send(dispatcher(res, data, 'success'));
         } catch (error) {
             next(error)
