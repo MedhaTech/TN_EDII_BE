@@ -6,7 +6,7 @@ export const challengeRatingSchema = Joi.object().keys({
     evaluator_id: Joi.number().required().messages({
         'string.empty': speeches.ID_REQUIRED
     }),
-    challenge_response_id: Joi.number().required().messages({
+    idea_id: Joi.number().required().messages({
         'string.empty': speeches.ID_REQUIRED
     }),
     level: Joi.string(),
