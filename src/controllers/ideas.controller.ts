@@ -30,20 +30,21 @@ export default class ideasController extends BaseController {
         this.router.post(this.path + "/fileUpload", this.handleAttachment.bind(this));
         this.router.get(`${this.path}/ideastatusbyteamId`, this.getideastatusbyteamid.bind(this));
         this.router.get(this.path + '/fetchRandomChallenge', this.getRandomChallenge.bind(this));
+        this.router.get(`${this.path}/evaluated/:evaluator_id`, this.getChallengesForEvaluator.bind(this))
         super.initializeRoutes();
     }
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'EADMIN' && res.locals.role !== 'STATE'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'EADMIN' && res.locals.role !== 'STATE') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         let user_id = res.locals.user_id || res.locals.state_coordinators_id;
-        let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
-            }
+        let newREQQuery: any = {}
+        if (req.query.Data) {
+            let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+            newREQQuery = JSON.parse(newQuery);
+        } else if (Object.keys(req.query).length !== 0) {
+            return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
+        }
         let { team_id } = newREQQuery;
         if (!user_id) {
             throw unauthorized(speeches.UNAUTHORIZED_ACCESS)
@@ -100,7 +101,7 @@ export default class ideasController extends BaseController {
         if (sdg) {
             additionalFilter['sdg'] = sdg && typeof sdg == 'string' ? sdg : {}
         }
-        
+
         if (rejected_reason) {
             additionalFilter['rejected_reason'] = rejected_reason && typeof rejected_reason == 'string' ? rejected_reason : {}
         }
@@ -569,7 +570,7 @@ export default class ideasController extends BaseController {
         }
     }
     protected async UpdateIdea(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR') {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'EVALUATOR') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
@@ -724,14 +725,14 @@ export default class ideasController extends BaseController {
             let result: any = {};
             let proxyAgent = new HttpsProxyAgent('http://10.236.241.101:9191');
             let s3
-            if(process.env.ISAWSSERVER){
+            if (process.env.ISAWSSERVER) {
                 s3 = new S3({
                     apiVersion: '2006-03-01',
                     region: process.env.AWS_REGION,
                     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
                     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
                 });
-            }else{
+            } else {
                 s3 = new S3({
                     apiVersion: '2006-03-01',
                     region: process.env.AWS_REGION,
@@ -795,8 +796,8 @@ export default class ideasController extends BaseController {
         }
     }
     protected async getRandomChallenge(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if(res.locals.role !== 'ADMIN' && res.locals.role !== 'EVALUATOR'){
-            return res.status(401).send(dispatcher(res,'','error', speeches.ROLE_ACCES_DECLINE,401));
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'EVALUATOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
             let challengeResponse: any;
@@ -804,12 +805,12 @@ export default class ideasController extends BaseController {
             let whereClause: any = {};
             let whereClauseStatusPart: any = {}
             let attributesNeedFetch: any;
-            let newREQQuery : any = {}
-            if(req.query.Data){
-                let newQuery : any = await this.authService.decryptGlobal(req.query.Data);
-                newREQQuery  = JSON.parse(newQuery);
-            }else if(Object.keys(req.query).length !== 0){
-                return res.status(400).send(dispatcher(res,'','error','Bad Request',400));
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
 
             let user_id = res.locals.user_id;
@@ -827,10 +828,10 @@ export default class ideasController extends BaseController {
             let boolStatusWhereClauseRequired = false;
 
             if (paramStatus && (paramStatus in constents.challenges_flags.list)) {
-                whereClauseStatusPart = { "status": paramStatus ,district : {[Op.in]: convertToDistrictArray} };
+                whereClauseStatusPart = { "status": paramStatus, district: { [Op.in]: convertToDistrictArray } };
                 boolStatusWhereClauseRequired = true;
             } else {
-                whereClauseStatusPart = { "status": "SUBMITTED",district : {[Op.in]: convertToDistrictArray} };
+                whereClauseStatusPart = { "status": "SUBMITTED", district: { [Op.in]: convertToDistrictArray } };
                 boolStatusWhereClauseRequired = true;
             };
 
@@ -877,7 +878,7 @@ export default class ideasController extends BaseController {
                                 [Op.and]: [
                                     whereClauseStatusPart,
                                     { evaluation_status: { [Op.is]: null } },
-                                    { verified_by : { [Op.ne]: null } }
+                                    { verified_by: { [Op.ne]: null } }
 
                                 ]
                             }
@@ -936,4 +937,210 @@ export default class ideasController extends BaseController {
             next(error);
         }
     }
+    private async getChallengesForEvaluator(req: Request, res: Response, next: NextFunction) {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'EVALUATOR') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
+            }
+            let data: any = [];
+            let whereClauseEvaluationStatus: any = {};
+            let additionalFilter: any = {};
+            let districtFilter: any = {};
+            const newParamEvaluatorId = await this.authService.decryptGlobal(req.params.evaluator_id);
+            const evaluator_id: any = newParamEvaluatorId
+            const evaluation_status: any = newREQQuery.evaluation_status;
+            const district: any = newREQQuery.district;
+            const rejected_reason: any = newREQQuery.rejected_reason;
+            const level: any = newREQQuery.level;
+            if (!evaluator_id) {
+                throw badRequest(speeches.TEAM_NAME_ID)
+            };
+            if (evaluation_status) {
+                if (evaluation_status in constents.evaluation_status.list) {
+                    whereClauseEvaluationStatus = { 'evaluation_status': evaluation_status };
+                } else {
+                    whereClauseEvaluationStatus['evaluation_status'] = null;
+                }
+            }
+            if (rejected_reason) {
+                additionalFilter['rejected_reason'] = rejected_reason && typeof rejected_reason == 'string' ? rejected_reason : {}
+            }
+            if (district) {
+                additionalFilter['district'] = district && typeof district == 'string' ? district : {}
+            }
+            if (level && typeof level == 'string') {
+                switch (level) {
+                    case 'L1':
+                        data = await this.crudService.findAll(ideas, {
+                            attributes: [
+                                "idea_id",
+                                "financial_year_id",
+                                "theme_problem_id",
+                                "team_id",
+                                "idea_title",
+                                "solution_statement",
+                                "detailed_solution",
+                                "prototype_available",
+                                "Prototype_file",
+                                "idea_available",
+                                "self_declaration",
+                                "status",
+                                "initiated_by",
+                                "submitted_at",
+                                "created_by",
+                                "created_at",
+                                "verified_by",
+                                "verified_at",
+                                "district",
+                                [
+                                    db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`initiated_by\` )`), 'initiated_name'
+                                ],
+                                [
+                                    db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`verified_by\` )`), 'verified_name'
+                                ],
+                                [
+                                    db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
+                                ],
+                                [
+                                    db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`ideas\`.\`team_id\` )`), 'team_name'
+                                ]
+                                // [
+                                //     db.literal(`(SELECT JSON_ARRAYAGG(student_full_name) FROM unisolve_db.students  AS s LEFT OUTER JOIN unisolve_db.teams AS t ON s.team_id = t.team_id WHERE t.team_id = \`ideas\`.\`team_id\` )`), 'team_members'
+                                // ]
+                                // [
+                                //     db.literal(`(SELECT mentorTeamOrg.organization_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_name'
+                                // ],
+                                // [
+                                //     db.literal(`(SELECT mentorTeamOrg.organization_code FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_code'
+                                // ],
+                                // [
+                                //     db.literal(`(SELECT full_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mentor_name'
+                                // ]
+                            ],
+                            include: {
+                                model: themes_problems,
+                                attributes: [
+                                    "theme_problem_id",
+                                    "theme_name",
+                                    "problem_statement",
+                                    "problem_statement_description",
+                                ]
+                            },
+                            where: {
+                                [Op.and]: [
+                                    { evaluated_by: evaluator_id },
+                                    whereClauseEvaluationStatus,
+                                    additionalFilter,
+                                ]
+                            }
+                        });
+                        break;
+                    case 'L2': {
+                        data = await this.crudService.findAll(ideas, {
+                            attributes: [
+                                "idea_id",
+                                "financial_year_id",
+                                "theme_problem_id",
+                                "team_id",
+                                "idea_title",
+                                "solution_statement",
+                                "detailed_solution",
+                                "prototype_available",
+                                "Prototype_file",
+                                "idea_available",
+                                "self_declaration",
+                                "status",
+                                "initiated_by",
+                                "submitted_at",
+                                "created_by",
+                                "created_at",
+                                "verified_by",
+                                "verified_at",
+                                "district",
+                                [
+                                    db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`initiated_by\` )`), 'initiated_name'
+                                ],
+                                [
+                                    db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`verified_by\` )`), 'verified_name'
+                                ],
+                                [
+                                    db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
+                                ],
+                                [
+                                    db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`ideas\`.\`team_id\` )`), 'team_name'
+                                ]
+                                // [
+                                //     db.literal(`(SELECT JSON_ARRAYAGG(student_full_name) FROM unisolve_db.students  AS s LEFT OUTER JOIN unisolve_db.teams AS t ON s.team_id = t.team_id WHERE t.team_id = \`ideas\`.\`team_id\` )`), 'team_members'
+                                // ]
+                                // [
+                                //     db.literal(`(SELECT mentorTeamOrg.organization_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_name'
+                                // ],
+                                // [
+                                //     db.literal(`(SELECT mentorTeamOrg.organization_code FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_code'
+                                // ],
+                                // [
+                                //     db.literal(`(SELECT full_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mentor_name'
+                                // ]
+                            ],
+                            where: {
+                                [Op.and]: [
+                                    whereClauseEvaluationStatus,
+                                    additionalFilter,
+                                    db.literal('`evaluator_ratings`.`evaluator_id` =' + JSON.stringify(evaluator_id)),
+                                ]
+                            },
+                            include: [{
+                                model: evaluator_rating,
+                                required: false,
+                                where: { evaluator_id },
+                                attributes: [
+                                    'evaluator_rating_id',
+                                    'evaluator_id',
+                                    'challenge_response_id',
+                                    'status',
+                                    'level',
+                                    'param_1',
+                                    'param_2',
+                                    'param_3',
+                                    'param_4',
+                                    'param_5',
+                                    'comments',
+                                    'overall',
+                                    'submitted_at',
+                                    "created_at"
+                                ]
+                            },
+                            {
+                                model: themes_problems,
+                                attributes: [
+                                    "theme_problem_id",
+                                    "theme_name",
+                                    "problem_statement",
+                                    "problem_statement_description",
+                                ]
+                            }
+                            ],
+                        });
+                    }
+                }
+            }
+            if (!data) {
+                throw badRequest(data.message)
+            };
+            if (data instanceof Error) {
+                throw data;
+            }
+            data.forEach((element: any) => { element.dataValues.response = JSON.parse(element.dataValues.response) })
+            return res.status(200).send(dispatcher(res, data, 'success'));
+        } catch (error) {
+            next(error)
+        }
+    };
 }
