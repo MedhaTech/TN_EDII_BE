@@ -999,6 +999,7 @@ export default class ideasController extends BaseController {
                                 "verified_by",
                                 "verified_at",
                                 "district",
+                                "evaluation_status",
                                 [
                                     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`initiated_by\` )`), 'initiated_name'
                                 ],
