@@ -178,3 +178,110 @@ SET
         }
     };
 }
+// SELECT 
+//     ins.institution_code,
+//     ins.institution_name,
+//     state_name,
+//     district_name,
+//     block_name,
+//     taluk_name,
+//     place_name,
+//     ins.principal_name,
+//     ins.principal_mobile,
+//     ins.principal_email,
+//     m.mentor_name,
+//     m.mentor_mobile,
+//     m.mentor_email,
+//     teams.team_name,
+//     (SELECT 
+//             GROUP_CONCAT(student_full_name
+//                     SEPARATOR ', ') AS names
+//         FROM
+//             students
+//         WHERE
+//             students.team_id = teams.team_id) AS students_names,
+//     i.status,
+//     evaluation_status,
+//     final_result,
+//     idea_title,
+//     solution_statement,
+//     detailed_solution,
+//     prototype_available,
+//     Prototype_file,
+//     idea_available,
+//     self_declaration,
+//     verified_by,
+//     (SELECT 
+//             AVG(overall)
+//         FROM
+//             evaluator_ratings
+//         WHERE
+//             evaluator_ratings.idea_id = i.idea_id) AS overall_score,
+//     (SELECT 
+//             AVG(param_1)
+//         FROM
+//             evaluator_ratings
+//         WHERE
+//             evaluator_ratings.idea_id = i.idea_id) AS novelty,
+//     (SELECT 
+//             AVG(param_2)
+//         FROM
+//             evaluator_ratings
+//         WHERE
+//             evaluator_ratings.idea_id = i.idea_id) AS useful,
+//     (SELECT 
+//             AVG(param_3)
+//         FROM
+//             evaluator_ratings
+//         WHERE
+//             evaluator_ratings.idea_id = i.idea_id) AS feasibility,
+//     (SELECT 
+//             AVG(param_4)
+//         FROM
+//             evaluator_ratings
+//         WHERE
+//             evaluator_ratings.idea_id = i.idea_id) AS scalability,
+//     (SELECT 
+//             AVG(param_5)
+//         FROM
+//             evaluator_ratings
+//         WHERE
+//             evaluator_ratings.idea_id = i.idea_id) AS sustainability,
+//     (SELECT 
+//             (AVG(param_1) + AVG(param_2)) / 2
+//         FROM
+//             evaluator_ratings
+//         WHERE
+//             evaluator_ratings.idea_id = i.idea_id) AS quality_score,
+//     (SELECT 
+//             COUNT(idea_id)
+//         FROM
+//             evaluator_ratings
+//         WHERE
+//             evaluator_ratings.idea_id = i.idea_id) AS eval_count,
+//     (SELECT 
+//             (AVG(param_3) + AVG(param_4) + AVG(param_5)) / 3
+//         FROM
+//             evaluator_ratings
+//         WHERE
+//             evaluator_ratings.idea_id = i.idea_id) AS feasibility_score
+// FROM
+//     ideas AS i
+//         LEFT JOIN
+//     teams ON i.team_id = teams.team_id
+//         LEFT JOIN
+//     mentors AS m ON teams.mentor_id = m.mentor_id
+//         LEFT JOIN
+//     institutions AS ins ON m.institution_id = ins.institution_id
+//         LEFT JOIN
+//     places AS p ON ins.place_id = p.place_id
+//         LEFT JOIN
+//     taluks AS t ON p.taluk_id = t.taluk_id
+//         LEFT JOIN
+//     blocks AS b ON t.block_id = b.block_id
+//         LEFT JOIN
+//     districts AS d ON b.district_id = d.district_id
+//         LEFT JOIN
+//     states AS s ON d.state_id = s.state_id
+//     WHERE
+//     i.status = 'SUBMITTED'

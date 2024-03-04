@@ -342,12 +342,57 @@ export default class ReportController extends BaseController {
             const district_name = newREQQuery.district_name;
             let wherefilter = '';
             if (district_name !== 'All Districts') {
-                wherefilter = `where district_name= '${district_name}'`;
+                wherefilter = `&& district_name= '${district_name}'`;
             }
             const data = await db.query(`SELECT 
-                    *
+            ins.institution_code,
+            ins.institution_name,
+            state_name,
+            district_name,
+            block_name,
+            taluk_name,
+            place_name,
+            ins.principal_name,
+            ins.principal_mobile,
+            ins.principal_whatsapp_mobile,
+            ins.principal_email,
+            m.mentor_name,
+            m.mentor_mobile,
+            m.mentor_email,
+            stu.student_full_name,
+            stu.year_of_study,
+            stu.date_of_birth,
+            stu.mobile,
+            stu.email,
+            stu.gender,
+            stu.age,
+            teams.team_name,
+            (SELECT 
+                    status
                 FROM
-                    student_report ${wherefilter}
+                    ideas
+                WHERE
+                    ideas.team_id = stu.team_id) AS idea_status
+        FROM
+            students AS stu
+                LEFT JOIN
+            teams ON stu.team_id = teams.team_id
+                LEFT JOIN
+            mentors AS m ON teams.mentor_id = m.mentor_id
+                LEFT JOIN
+            institutions AS ins ON m.institution_id = ins.institution_id
+                LEFT JOIN
+            places AS p ON ins.place_id = p.place_id
+                LEFT JOIN
+            taluks AS t ON p.taluk_id = t.taluk_id
+                LEFT JOIN
+            blocks AS b ON t.block_id = b.block_id
+                LEFT JOIN
+            districts AS d ON b.district_id = d.district_id
+                LEFT JOIN
+            states AS s ON d.state_id = s.state_id
+        WHERE
+            ins.status = 'ACTIVE' ${wherefilter}
                  order by district_name,mentor_name,team_name,student_full_name;`, { type: QueryTypes.SELECT });
 
             if (!data) {
@@ -376,12 +421,75 @@ export default class ReportController extends BaseController {
             const district_name = newREQQuery.district_name;
             let wherefilter = '';
             if (district_name !== 'All Districts') {
-                wherefilter = `where district_name= '${district_name}'`;
+                wherefilter = `&& district_name= '${district_name}'`;
             }
             const data = await db.query(`SELECT 
-                *
-            FROM
-                Institution_report
+            ins.institution_code,
+            ins.institution_name,
+            state_name,
+            district_name,
+            block_name,
+            taluk_name,
+            place_name,
+            ins.principal_name,
+            ins.principal_mobile,
+            ins.principal_whatsapp_mobile,
+            ins.principal_email,
+            m.mentor_title,
+            m.mentor_name,
+            m.mentor_mobile,
+            m.mentor_whatapp_mobile,
+            m.mentor_email,
+            m.gender,
+            m.date_of_birth,
+            (SELECT 
+                    COUNT(*) AS team_count
+                FROM
+                    teams AS t
+                WHERE
+                    t.mentor_id = m.mentor_id) AS team_count,
+            (SELECT 
+                    COUNT(*) AS student_count
+                FROM
+                    teams
+                        JOIN
+                    students ON teams.team_id = students.team_id
+                WHERE
+                    teams.mentor_id = m.mentor_id) AS student_count,
+            (SELECT 
+                    COUNT(*) AS submittedcout
+                FROM
+                    teams
+                        JOIN
+                    ideas ON teams.team_id = ideas.team_id
+                WHERE
+                    ideas.status = 'SUBMITTED'
+                        AND teams.mentor_id = m.mentor_id) AS submittedcout,
+            (SELECT 
+                    COUNT(*) AS draftcout
+                FROM
+                    teams
+                        JOIN
+                    ideas ON teams.team_id = ideas.team_id
+                WHERE
+                    ideas.status = 'DRAFT'
+                        AND teams.mentor_id = m.mentor_id) AS draftcout
+        FROM
+            (mentors AS m)
+                LEFT JOIN
+            institutions AS ins ON m.institution_id = ins.institution_id
+                LEFT JOIN
+            places AS p ON ins.place_id = p.place_id
+                LEFT JOIN
+            taluks AS t ON p.taluk_id = t.taluk_id
+                LEFT JOIN
+            blocks AS b ON t.block_id = b.block_id
+                LEFT JOIN
+            districts AS d ON b.district_id = d.district_id
+                LEFT JOIN
+            states AS s ON d.state_id = s.state_id
+        WHERE
+            ins.status = 'ACTIVE'
             ${wherefilter}
             ORDER BY district_name,mentor_name;`, { type: QueryTypes.SELECT })
             if (!data) {
@@ -704,25 +812,33 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
             const district_name = newREQQuery.district_name;
             let wherefilter = '';
             if (district_name !== 'All Districts') {
-                wherefilter = `where district_name= '${district_name}'`;
+                wherefilter = `&& district_name= '${district_name}'`;
             }
-            data = await db.query(`
-            SELECT 
-            institution_code,
-            institution_name,
+            data = await db.query(`SELECT 
+            ins.institution_code,
+            ins.institution_name,
             state_name,
             district_name,
             block_name,
             taluk_name,
             place_name,
-            principal_name,
-            principal_mobile,
-            principal_email,
-            mentor_name,
-            mentor_mobile,
-            mentor_email,
-            team_name,
-            students_names,
+            ins.principal_name,
+            ins.principal_mobile,
+            ins.principal_email,
+            m.mentor_name,
+            m.mentor_mobile,
+            m.mentor_email,
+            teams.team_name,
+            (SELECT 
+                    GROUP_CONCAT(student_full_name
+                            SEPARATOR ', ') AS names
+                FROM
+                    students
+                WHERE
+                    students.team_id = teams.team_id) AS students_names,
+            i.status,
+            evaluation_status,
+            final_result,
             idea_title,
             solution_statement,
             detailed_solution,
@@ -730,13 +846,32 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
             Prototype_file,
             idea_available,
             self_declaration,
+            verified_by,
             theme_name,
             problem_statement,
             problem_statement_description
         FROM
-            idea_report AS i
-        JOIN
-                themes_problems AS t ON i.theme_problem_id = t.theme_problem_id ${wherefilter}`, { type: QueryTypes.SELECT });
+            ideas AS i
+                LEFT JOIN
+            teams ON i.team_id = teams.team_id
+                LEFT JOIN
+            mentors AS m ON teams.mentor_id = m.mentor_id
+                LEFT JOIN
+            institutions AS ins ON m.institution_id = ins.institution_id
+                LEFT JOIN
+            places AS p ON ins.place_id = p.place_id
+                LEFT JOIN
+            taluks AS t ON p.taluk_id = t.taluk_id
+                LEFT JOIN
+            blocks AS b ON t.block_id = b.block_id
+                LEFT JOIN
+            districts AS d ON b.district_id = d.district_id
+                LEFT JOIN
+            states AS s ON d.state_id = s.state_id
+                LEFT JOIN
+            themes_problems AS the ON i.theme_problem_id = the.theme_problem_id
+        WHERE
+            i.status = 'SUBMITTED' ${wherefilter}`, { type: QueryTypes.SELECT });
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
