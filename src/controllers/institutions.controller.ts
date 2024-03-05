@@ -521,8 +521,8 @@ export default class institutionsController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { block_id } = newREQQuery
-            const result = await db.query(`SELECT taluk_id,taluk_name FROM taluks where block_id = ${block_id};`, { type: QueryTypes.SELECT })
+            const { district_id } = newREQQuery
+            const result = await db.query(`SELECT taluk_id,taluk_name FROM taluks where district_id = ${district_id};`, { type: QueryTypes.SELECT })
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);

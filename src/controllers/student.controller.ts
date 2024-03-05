@@ -159,38 +159,39 @@ export default class StudentController extends BaseController {
                                                 'place_name_vernacular'
                                             ],
                                             include: {
-                                                model: taluks,
+                                                model: blocks,
                                                 attributes: [
-                                                    'taluk_id',
-                                                    'taluk_name',
-                                                    'taluk_name_vernacular'
-
+                                                    'block_id',
+                                                    'block_name',
+                                                    'block_name_vernacular'
                                                 ],
                                                 include: {
-                                                    model: blocks,
+                                                    model: districts,
                                                     attributes: [
-                                                        'block_id',
-                                                        'block_name',
-                                                        'block_name_vernacular'
+                                                        'district_id',
+                                                        'district_name',
+                                                        'district_name_vernacular',
+                                                        'district_headquarters',
+                                                        'district_headquarters_vernacular'
                                                     ],
-                                                    include: {
-                                                        model: districts,
+                                                    include: [{
+                                                        model: states,
                                                         attributes: [
-                                                            'district_id',
-                                                            'district_name',
-                                                            'district_name_vernacular',
-                                                            'district_headquarters',
-                                                            'district_headquarters_vernacular'
+                                                            'state_id',
+                                                            'state_name',
+                                                            'state_name_vernacular'
+                                                        ]
+                                                    },
+                                                    {
+                                                        model: taluks,
+                                                        attributes: [
+                                                            'taluk_id',
+                                                            'taluk_name',
+                                                            'taluk_name_vernacular'
+
                                                         ],
-                                                        include: {
-                                                            model: states,
-                                                            attributes: [
-                                                                'state_id',
-                                                                'state_name',
-                                                                'state_name_vernacular'
-                                                            ]
-                                                        }
                                                     }
+                                                    ]
                                                 }
                                             }
                                         }
@@ -545,15 +546,13 @@ export default class StudentController extends BaseController {
             const valueDis = await db.query(`SELECT 
                 district_name
             FROM
-                districts AS d
-                    JOIN
-                blocks AS b ON d.district_id = b.district_id
-                    JOIN
-                taluks AS t ON b.block_id = t.block_id
-                    JOIN
-                places AS p ON t.taluk_id = p.taluk_id
-                    JOIN
-                institutions AS ins ON p.place_id = ins.place_id
+            districts AS d
+            JOIN
+        blocks AS b ON d.district_id = b.district_id
+            JOIN
+        places AS p ON b.block_id = p.block_id
+            JOIN
+        institutions AS ins ON p.place_id = ins.place_id
             WHERE
                 institution_id = ${mentorData.dataValues.institution.dataValues.institution_id};`, { type: QueryTypes.SELECT });
             result.data['institution_name'] = mentorData.dataValues.institution.dataValues.institution_name;

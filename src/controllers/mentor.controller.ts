@@ -249,38 +249,39 @@ export default class MentorController extends BaseController {
                                     'place_name_vernacular'
                                 ],
                                 include: {
-                                    model: taluks,
+                                    model: blocks,
                                     attributes: [
-                                        'taluk_id',
-                                        'taluk_name',
-                                        'taluk_name_vernacular'
-
+                                        'block_id',
+                                        'block_name',
+                                        'block_name_vernacular'
                                     ],
                                     include: {
-                                        model: blocks,
+                                        model: districts,
                                         attributes: [
-                                            'block_id',
-                                            'block_name',
-                                            'block_name_vernacular'
+                                            'district_id',
+                                            'district_name',
+                                            'district_name_vernacular',
+                                            'district_headquarters',
+                                            'district_headquarters_vernacular'
                                         ],
-                                        include: {
-                                            model: districts,
+                                        include: [{
+                                            model: states,
                                             attributes: [
-                                                'district_id',
-                                                'district_name',
-                                                'district_name_vernacular',
-                                                'district_headquarters',
-                                                'district_headquarters_vernacular'
+                                                'state_id',
+                                                'state_name',
+                                                'state_name_vernacular'
+                                            ]
+                                        },
+                                        {
+                                            model: taluks,
+                                            attributes: [
+                                                'taluk_id',
+                                                'taluk_name',
+                                                'taluk_name_vernacular'
+
                                             ],
-                                            include: {
-                                                model: states,
-                                                attributes: [
-                                                    'state_id',
-                                                    'state_name',
-                                                    'state_name_vernacular'
-                                                ]
-                                            }
                                         }
+                                        ]
                                     }
                                 }
                             }
@@ -607,10 +608,10 @@ export default class MentorController extends BaseController {
             })
 
             const resultIdeasDelete = await this.crudService.delete(ideas, { where: { team_id: arrayOfteams } })
-                if (resultIdeasDelete instanceof Error) {
-                    throw resultIdeasDelete
-                }
-            
+            if (resultIdeasDelete instanceof Error) {
+                throw resultIdeasDelete
+            }
+
             if (arrayOfteams && arrayOfteams.length > 0) {
                 const studentUserIds = await student.findAll({
                     where: { team_id: arrayOfteams },

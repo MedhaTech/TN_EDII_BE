@@ -1,7 +1,7 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { taluks } from './taluks.model';
+import { places } from './places.model';
 
 
 export class blocks extends Model<InferAttributes<blocks>, InferCreationAttributes<blocks>> {
@@ -68,5 +68,5 @@ blocks.init({
     }
 
 );
-blocks.belongsTo(taluks, {targetKey: 'block_id',foreignKey: 'block_id', constraints: false });
-taluks.hasOne(blocks, { sourceKey: 'block_id', foreignKey: 'block_id', constraints: false });
+blocks.belongsTo(places, {targetKey: 'block_id',foreignKey: 'block_id', constraints: false });
+places.hasOne(blocks, { sourceKey: 'block_id', foreignKey: 'block_id', constraints: false });
