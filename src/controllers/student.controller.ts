@@ -278,21 +278,21 @@ export default class StudentController extends BaseController {
                     state_name
                 FROM
                     students AS st
-                    LEFT JOIN
+                        LEFT JOIN
                     teams AS te ON st.team_id = te.team_id
-                    LEFT JOIN
+                        LEFT JOIN
                     mentors AS m ON te.mentor_id = m.mentor_id
-                    LEFT JOIN
+                        LEFT JOIN
                     institutions AS ins ON m.institution_id = ins.institution_id
-                    LEFT JOIN
+                        LEFT JOIN
                     places AS p ON ins.place_id = p.place_id
-                    LEFT JOIN
-                    taluks AS t ON p.taluk_id = t.taluk_id
-                    LEFT JOIN
-                    blocks AS b ON t.block_id = b.block_id
-                    LEFT JOIN
+                        LEFT JOIN
+                    blocks AS b ON p.block_id = b.block_id
+                        LEFT JOIN
                     districts AS d ON b.district_id = d.district_id
-                    LEFT JOIN
+                        LEFT JOIN
+                    taluks AS t ON d.district_id = t.district_id
+                        LEFT JOIN
                     states AS s ON d.state_id = s.state_id
                 WHERE
                     ins.status = 'ACTIVE' ${whereText} ;`, { type: QueryTypes.SELECT })
