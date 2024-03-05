@@ -364,8 +364,8 @@ export default class ReportController extends BaseController {
             stu.date_of_birth,
             stu.mobile,
             stu.email,
-            stu.gender,
-            stu.age,
+            stu.Gender,
+            stu.Age,
             teams.team_name,
             (SELECT 
                     status
