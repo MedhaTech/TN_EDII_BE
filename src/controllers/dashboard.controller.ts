@@ -731,7 +731,6 @@ export default class DashboardController extends BaseController {
             response['final_evaluation_final'] = Object.values(final_evaluation_final[0]).toString();
             res.status(200).send(dispatcher(res, response, "success"))
         } catch (err) {
-            console.log(err)
             next(err)
         }
     }
