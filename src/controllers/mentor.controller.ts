@@ -32,6 +32,7 @@ import { taluks } from '../models/taluks.model';
 import { districts } from '../models/districts.model';
 import { states } from '../models/states.model';
 import { institution_types } from '../models/institution_types.model';
+import { ideas } from '../models/ideas.model';
 
 export default class MentorController extends BaseController {
     model = "mentor";
@@ -604,6 +605,12 @@ export default class MentorController extends BaseController {
             const arrayOfteams = teamResult.map((teamSingleresult: any) => {
                 return teamSingleresult.team_id;
             })
+
+            const resultIdeasDelete = await this.crudService.delete(ideas, { where: { team_id: arrayOfteams } })
+                if (resultIdeasDelete instanceof Error) {
+                    throw resultIdeasDelete
+                }
+            
             if (arrayOfteams && arrayOfteams.length > 0) {
                 const studentUserIds = await student.findAll({
                     where: { team_id: arrayOfteams },
