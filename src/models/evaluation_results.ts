@@ -7,7 +7,7 @@ import { evaluator_rating } from './evaluator_rating.model';
 
 export class evaluation_results extends Model<InferAttributes<evaluation_results>, InferCreationAttributes<evaluation_results>> {
     declare evaluation_results_id: CreationOptional<number>;
-    declare challenge_response_id: string;
+    declare idea_id: string;
     declare level: Enumerator;
     declare status: Enumerator;
     declare created_by: number;
@@ -22,7 +22,7 @@ export class evaluation_results extends Model<InferAttributes<evaluation_results
             autoIncrement: true,
             primaryKey: true
         },
-        challenge_response_id: {
+        idea_id: {
             type: DataTypes.INTEGER,
             unique: true,
             allowNull: false
@@ -69,5 +69,5 @@ evaluation_results.init(
     }
 );
 
-evaluation_results.hasMany(evaluator_rating, { sourceKey: 'challenge_response_id', foreignKey: 'challenge_response_id', constraints: false })
-evaluator_rating.belongsTo(evaluation_results, { foreignKey: 'challenge_response_id', constraints: false });
+evaluation_results.hasMany(evaluator_rating, { sourceKey: 'idea_id', foreignKey: 'idea_id', constraints: false })
+evaluator_rating.belongsTo(evaluation_results, { foreignKey: 'idea_id', constraints: false });
