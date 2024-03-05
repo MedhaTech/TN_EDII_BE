@@ -473,9 +473,11 @@ export default class ideasController extends BaseController {
                             "verified_by",
                             "verified_at",
                             "district",
-                            // [
-                            //     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
-                            // ],
+                            "evaluation_status",
+                            "evaluated_at",
+                            [
+                                db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
+                            ],
                             // [
                             //     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`initiated_by\` )`), 'initiated_name'
                             // ],
@@ -570,7 +572,7 @@ export default class ideasController extends BaseController {
         }
     }
     protected async UpdateIdea(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'EVALUATOR') {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'STUDENT' && res.locals.role !== 'MENTOR' && res.locals.role !== 'EVALUATOR' && res.locals.role !== 'EADMIN') {
             return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
         }
         try {
