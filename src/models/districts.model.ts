@@ -2,6 +2,7 @@ import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, 
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
 import { blocks } from './blocks.model';
+import { taluks } from './taluks.model';
 
 
 export class districts extends Model<InferAttributes<districts>, InferCreationAttributes<districts>> {
@@ -78,3 +79,5 @@ districts.init({
 );
 districts.belongsTo(blocks, {targetKey: 'district_id',foreignKey: 'district_id', constraints: false });
 blocks.hasOne(districts, { sourceKey: 'district_id', foreignKey: 'district_id', constraints: false });
+districts.belongsTo(taluks, {targetKey: 'district_id',foreignKey: 'district_id', constraints: false });
+taluks.hasOne(districts, { sourceKey: 'district_id', foreignKey: 'district_id', constraints: false });

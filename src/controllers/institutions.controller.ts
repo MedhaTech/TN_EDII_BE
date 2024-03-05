@@ -18,6 +18,8 @@ import { institution_types } from "../models/institution_types.model";
 import { institution_principals } from "../models/institution_principals.model";
 import db from "../utils/dbconnection.util"
 import { institutions } from "../models/institutions.model";
+import { institutional_courses } from "../models/institutional_courses.model";
+import { student } from "../models/student.model";
 
 export default class institutionsController extends BaseController {
 
@@ -40,7 +42,14 @@ export default class institutionsController extends BaseController {
         this.router.get(`${this.path}/logout`, this.logout.bind(this));
         this.router.put(`${this.path}/changePassword`, this.changePassword.bind(this));
         this.router.get(`${this.path}/Myprofile`, this.getMyprofile.bind(this));
-
+        this.router.get(`${this.path}/districts`, this.getdistricts.bind(this));
+        this.router.get(`${this.path}/districtNames`, this.getdistrictNames.bind(this));
+        this.router.get(`${this.path}/blocks`, this.getblocks.bind(this));
+        this.router.get(`${this.path}/taluks`, this.gettaluks.bind(this));
+        this.router.get(`${this.path}/places`, this.getplaces.bind(this));
+        this.router.post(`${this.path}/addinstCourse`, this.addinstCourse.bind(this));
+        this.router.put(`${this.path}/edit/:institution_id`, validationMiddleware(institutionsUpdateSchema), this.editData.bind(this));
+        this.router.delete(`${this.path}/delectinstCourse/:institution_course_id`, this.delectinstCourse.bind(this));
         super.initializeRoutes();
     };
     protected async getData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
@@ -210,63 +219,6 @@ export default class institutionsController extends BaseController {
     private async createOrg(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         return this.createData(req, res, next);
     }
-    // private async getStreams(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-    //     try {
-    //         let response: any = [];
-    //         const deValue: any = await this.authService.decryptGlobal(req.params.institution_type_id);
-    //         const findUniversity = await this.crudService.findOne(institution_types, {
-    //             where: { institution_type_id: JSON.parse(deValue) }
-    //         })
-    //         if (!findUniversity) {
-    //             return res.status(404).send(dispatcher(res, null, 'error', 'no data found'));
-    //         }
-    //         let objWhereClauseStatusPart = this.getWhereClauseStatsPart(req);
-    //         let result: any = {};
-    //         const where: any = {};
-    //         if (!findUniversity?.dataValues?.institution_type?.includes("University")) {
-    //             where[`institution_type_id`] = JSON.parse(deValue);
-    //             result = await this.crudService.findAll(streams, {
-    //                 attributes: [
-    //                     'stream_name',
-    //                     "stream_id"
-    //                 ],
-    //                 where: {
-    //                     [Op.and]: [
-    //                         objWhereClauseStatusPart.whereClauseStatusPart,
-    //                         where
-    //                     ]
-    //                 },
-    //                 order: ['stream_name']
-    //             });
-    //             //result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams where institution_type_id = ${deValue} group by stream_name;`, { type: QueryTypes.SELECT });
-    //         } else {
-    //             result = await this.crudService.findAll(streams, {
-    //                 attributes: [
-    //                     'stream_name',
-    //                     'stream_id'
-    //                 ],
-    //                 where: {
-    //                     [Op.and]: [
-    //                         objWhereClauseStatusPart.whereClauseStatusPart
-    //                     ]
-    //                 },
-    //                 order: ['stream_name']
-    //             });
-    //             //result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams group by stream_name;`, { type: QueryTypes.SELECT });
-    //         }
-    //         if (result.length > 0) {
-    //             result.forEach((obj: any) => {
-    //                 response.push({ stream_name: obj.dataValues.stream_name, stream_id: obj.dataValues.stream_id })
-    //             });
-    //             return res.status(200).send(dispatcher(res, response, 'success'));
-    //         }
-    //         // result = await db.query(`SELECT stream_name,stream_id FROM unisolve_db.streams;`, { type: QueryTypes.SELECT });
-    //         //return res.status(200).send(dispatcher(res, result, 'success'));
-    //         return res.status(404).send(dispatcher(res, null, 'error', 'no data'));
-    //     } catch (error) {
-    //         next(error);
-    //     }
-    // }
     private async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const result = await this.authService.orglogin(req.body);
@@ -296,7 +248,6 @@ export default class institutionsController extends BaseController {
             return res.status(202).send(dispatcher(res, result.data, 'accepted', speeches.USER_PASSWORD_CHANGE, 202));
         }
     }
-
     private async logout(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         const result = await this.authService.orglogout(req.body, res);
         if (result.error) {
@@ -315,8 +266,10 @@ export default class institutionsController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { institution_id } = newREQQuery
-            const result = await db.query(`SELECT DISTINCT
+            const { institution_id, status } = newREQQuery
+            let result: any;
+            if (institution_id) {
+                result = await db.query(`SELECT DISTINCT
             institution_type,it.institution_type_id
         FROM
             institutional_courses AS inC
@@ -324,6 +277,9 @@ export default class institutionsController extends BaseController {
             institution_types AS it ON inC.institution_type_id = it.institution_type_id
         WHERE
             institution_id = ${institution_id};`, { type: QueryTypes.SELECT })
+            } else if (status === 'ALL') {
+                result = await db.query(`SELECT institution_type,institution_type_id FROM institution_types order by sort_order;`, { type: QueryTypes.SELECT })
+            }
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
@@ -339,8 +295,10 @@ export default class institutionsController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { institution_id, institution_type_id } = newREQQuery
-            const result = await db.query(`SELECT DISTINCT
+            const { institution_id, institution_type_id, status } = newREQQuery
+            let result: any
+            if (institution_id && institution_type_id) {
+                result = await db.query(`SELECT DISTINCT
             stream_name,s.stream_id
         FROM
             institutional_courses AS inC
@@ -348,6 +306,9 @@ export default class institutionsController extends BaseController {
             streams AS s ON inC.stream_id = s.stream_id
         WHERE
             institution_id = ${institution_id} and institution_type_id = ${institution_type_id};`, { type: QueryTypes.SELECT })
+            } else if (status === 'ALL') {
+                result = await db.query(`SELECT stream_name,stream_id FROM streams order by sort_order;`, { type: QueryTypes.SELECT })
+            }
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
@@ -363,8 +324,10 @@ export default class institutionsController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { institution_id, institution_type_id, stream_id } = newREQQuery
-            const result = await db.query(`SELECT DISTINCT
+            const { institution_id, institution_type_id, stream_id, status } = newREQQuery
+            let result: any
+            if (institution_id && institution_type_id && stream_id) {
+                result = await db.query(`SELECT DISTINCT
             program_name,institution_course_id
         FROM
             institutional_courses AS inC
@@ -372,6 +335,9 @@ export default class institutionsController extends BaseController {
             programs AS p ON inC.program_id = p.program_id
         WHERE
             institution_id = ${institution_id} and institution_type_id = ${institution_type_id} and stream_id = ${stream_id};`, { type: QueryTypes.SELECT })
+            } else if (status === 'ALL') {
+                result = await db.query(`SELECT program_name,program_id FROM programs order by sort_order;`, { type: QueryTypes.SELECT })
+            }
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
@@ -408,38 +374,39 @@ export default class institutionsController extends BaseController {
                             'place_name_vernacular'
                         ],
                         include: {
-                            model: taluks,
+                            model: blocks,
                             attributes: [
-                                'taluk_id',
-                                'taluk_name',
-                                'taluk_name_vernacular'
-
+                                'block_id',
+                                'block_name',
+                                'block_name_vernacular'
                             ],
                             include: {
-                                model: blocks,
+                                model: districts,
                                 attributes: [
-                                    'block_id',
-                                    'block_name',
-                                    'block_name_vernacular'
+                                    'district_id',
+                                    'district_name',
+                                    'district_name_vernacular',
+                                    'district_headquarters',
+                                    'district_headquarters_vernacular'
                                 ],
-                                include: {
-                                    model: districts,
+                                include: [{
+                                    model: states,
                                     attributes: [
-                                        'district_id',
-                                        'district_name',
-                                        'district_name_vernacular',
-                                        'district_headquarters',
-                                        'district_headquarters_vernacular'
+                                        'state_id',
+                                        'state_name',
+                                        'state_name_vernacular'
+                                    ]
+                                },
+                                {
+                                    model: taluks,
+                                    attributes: [
+                                        'taluk_id',
+                                        'taluk_name',
+                                        'taluk_name_vernacular'
+
                                     ],
-                                    include: {
-                                        model: states,
-                                        attributes: [
-                                            'state_id',
-                                            'state_name',
-                                            'state_name_vernacular'
-                                        ]
-                                    }
                                 }
+                                ]
                             }
                         }
                     },
@@ -494,5 +461,137 @@ export default class institutionsController extends BaseController {
             next(error);
         }
 
+    }
+    private async getdistricts(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            const result = await db.query(`SELECT district_id,district_name FROM districts;`, { type: QueryTypes.SELECT })
+            return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async getdistrictNames(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            let response: any = [];
+            const result = await db.query(`SELECT district_name FROM districts;`, { type: QueryTypes.SELECT })
+            response.push('All Districts');
+            result.forEach((obj: any) => {
+                response.push(obj.district_name)
+            });
+            return res.status(200).send(dispatcher(res, response, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async getblocks(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
+            }
+            const { district_id } = newREQQuery
+            const result = await db.query(`SELECT block_id,block_name FROM blocks where district_id = ${district_id};`, { type: QueryTypes.SELECT })
+            return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async gettaluks(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
+            }
+            const { district_id } = newREQQuery
+            const result = await db.query(`SELECT taluk_id,taluk_name FROM taluks where district_id = ${district_id};`, { type: QueryTypes.SELECT })
+            return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async getplaces(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+
+            let newREQQuery: any = {}
+            if (req.query.Data) {
+                let newQuery: any = await this.authService.decryptGlobal(req.query.Data);
+                newREQQuery = JSON.parse(newQuery);
+            } else if (Object.keys(req.query).length !== 0) {
+                return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
+            }
+            const { block_id } = newREQQuery
+            const result = await db.query(`select place_id,place_name from places where block_id = ${block_id};`, { type: QueryTypes.SELECT })
+            return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async editData(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            const newParamId = await this.authService.decryptGlobal(req.params.institution_id);
+            const where: any = {};
+            where[`institution_id`] = newParamId;
+            let result: any = await this.crudService.update(institutions, req.body, { where: where });
+            return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async addinstCourse(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            let result: any = await this.crudService.create(institutional_courses, req.body);
+            return res.status(200).send(dispatcher(res, result, 'success'));
+        } catch (error) {
+            next(error);
+        }
+    }
+    private async delectinstCourse(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        if (res.locals.role !== 'ADMIN' && res.locals.role !== 'INSTITUTION') {
+            return res.status(401).send(dispatcher(res, '', 'error', speeches.ROLE_ACCES_DECLINE, 401));
+        }
+        try {
+            const newParamId: any = await this.authService.decryptGlobal(req.params.institution_course_id);
+            const where: any = {};
+            where[`institution_course_id`] = JSON.parse(newParamId);
+            const checkforid = await this.crudService.findOne(student, { where: where })
+            if (checkforid) {
+                return res.status(406).send(dispatcher(res, '', 'error', 'This course is associated with some student', 406));
+            } else {
+                let result: any = await this.crudService.delete(institutional_courses, { where: where });
+                return res.status(200).send(dispatcher(res, result, 'success'));
+            }
+
+        } catch (error) {
+            next(error);
+        }
     }
 }

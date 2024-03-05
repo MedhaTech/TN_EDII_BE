@@ -1,12 +1,11 @@
 import { CreationOptional, DataTypes, InferAttributes, InferCreationAttributes, Model, or } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { places } from './places.model';
 
 
 export class taluks extends Model<InferAttributes<taluks>, InferCreationAttributes<taluks>> {
     declare taluk_id: CreationOptional<number>;
-    declare block_id : number;
+    declare district_id : number;
     declare taluk_name: string;
     declare taluk_name_vernacular: string;
     declare status: Enumerator;
@@ -23,7 +22,7 @@ taluks.init({
         autoIncrement: true,
         primaryKey: true
     },
-    block_id: {
+    district_id: {
         type: DataTypes.INTEGER
     },
     taluk_name: {
@@ -68,5 +67,3 @@ taluks.init({
     }
 
 );
-taluks.belongsTo(places, {targetKey: 'taluk_id',foreignKey: 'taluk_id', constraints: false });
-places.hasOne(taluks, { sourceKey: 'taluk_id', foreignKey: 'taluk_id', constraints: false });

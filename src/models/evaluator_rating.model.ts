@@ -1,14 +1,14 @@
 import { CreationOptional, DataTypes, ForeignKey, InferAttributes, InferCreationAttributes, Model } from 'sequelize';
 import db from '../utils/dbconnection.util';
 import { constents } from '../configs/constents.config';
-import { challenge_response } from './challenge_response.model';
 import { evaluator } from './evaluator.model';
+import { ideas } from './ideas.model';
 
 
 export class evaluator_rating extends Model<InferAttributes<evaluator_rating>, InferCreationAttributes<evaluator_rating>> {
     declare evaluator_rating_id: CreationOptional<number>;
     declare evaluator_id: ForeignKey<number>;
-    declare challenge_response_id: string;
+    declare idea_id: string;
     declare level: Enumerator;
     declare param_1: number;
     declare param_2: number;
@@ -35,7 +35,7 @@ export class evaluator_rating extends Model<InferAttributes<evaluator_rating>, I
             type: DataTypes.INTEGER,
             allowNull: false
         },
-        challenge_response_id: {
+        idea_id: {
             type: DataTypes.INTEGER,
             unique: true,
             allowNull: false
@@ -120,7 +120,7 @@ evaluator_rating.init(
     }
 );
 
-challenge_response.hasMany(evaluator_rating, { foreignKey: 'challenge_response_id', constraints: false })
-evaluator_rating.belongsTo(challenge_response, { foreignKey: 'challenge_response_id', constraints: false });
+ideas.hasMany(evaluator_rating, { foreignKey: 'idea_id', constraints: false })
+evaluator_rating.belongsTo(ideas, { foreignKey: 'idea_id', constraints: false });
 evaluator_rating.belongsTo(evaluator, { foreignKey: 'evaluator_id', constraints: false });
 evaluator_rating.hasMany(evaluator, { foreignKey: 'evaluator_id', constraints: false });

@@ -32,6 +32,7 @@ import { taluks } from '../models/taluks.model';
 import { districts } from '../models/districts.model';
 import { states } from '../models/states.model';
 import { institution_types } from '../models/institution_types.model';
+import { ideas } from '../models/ideas.model';
 
 export default class MentorController extends BaseController {
     model = "mentor";
@@ -202,23 +203,9 @@ export default class MentorController extends BaseController {
                 whereClauseStatusPart = { "status": "ACTIVE" };
                 boolStatusWhereClauseRequired = true;
             };
-            // const getUserIdFromMentorId = await mentor.findOne({
-            //     attributes: ["user_id", "created_by"], where: { mentor_id: req.body.mentor_id }
-            // });
-            // console.log(getUserIdFromMentorId);
-            // if (!getUserIdFromMentorId) throw badRequest(speeches.MENTOR_NOT_EXISTS);
-            // if (getUserIdFromMentorId instanceof Error) throw getUserIdFromMentorId;
-            // if (current_user !== getUserIdFromMentorId.getDataValue("user_id")) {
-            //     throw forbidden();
-            // };
-            // let state: any = newREQQuery.state;
-            // let whereClauseOfState: any = state && state !== 'All States' ?
-            //     { state: { [Op.like]: newREQQuery.state } } :
-            //     { state: { [Op.like]: `%%` } }
+
             let district_name: any = newREQQuery.district_name;
-            let whereClauseOfState: any = district_name && district_name !== 'All Districts' ?
-                { '$institutions.places.blocks.taluks.districts.district_name$': { [Op.like]: newREQQuery.district_name } } :
-                { '$institutions.places.blocks.taluks.districts.district_name$': { [Op.like]: `%%` } }
+
             if (id) {
                 const deValue: any = await this.authService.decryptGlobal(req.params.id);
                 where[`${this.model}_id`] = JSON.parse(deValue);
@@ -262,38 +249,39 @@ export default class MentorController extends BaseController {
                                     'place_name_vernacular'
                                 ],
                                 include: {
-                                    model: taluks,
+                                    model: blocks,
                                     attributes: [
-                                        'taluk_id',
-                                        'taluk_name',
-                                        'taluk_name_vernacular'
-
+                                        'block_id',
+                                        'block_name',
+                                        'block_name_vernacular'
                                     ],
                                     include: {
-                                        model: blocks,
+                                        model: districts,
                                         attributes: [
-                                            'block_id',
-                                            'block_name',
-                                            'block_name_vernacular'
+                                            'district_id',
+                                            'district_name',
+                                            'district_name_vernacular',
+                                            'district_headquarters',
+                                            'district_headquarters_vernacular'
                                         ],
-                                        include: {
-                                            model: districts,
+                                        include: [{
+                                            model: states,
                                             attributes: [
-                                                'district_id',
-                                                'district_name',
-                                                'district_name_vernacular',
-                                                'district_headquarters',
-                                                'district_headquarters_vernacular'
+                                                'state_id',
+                                                'state_name',
+                                                'state_name_vernacular'
+                                            ]
+                                        },
+                                        {
+                                            model: taluks,
+                                            attributes: [
+                                                'taluk_id',
+                                                'taluk_name',
+                                                'taluk_name_vernacular'
+
                                             ],
-                                            include: {
-                                                model: states,
-                                                attributes: [
-                                                    'state_id',
-                                                    'state_name',
-                                                    'state_name_vernacular'
-                                                ]
-                                            }
                                         }
+                                        ]
                                     }
                                 }
                             }
@@ -302,89 +290,51 @@ export default class MentorController extends BaseController {
                 });
             } else {
                 try {
-                    const responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
-                        attributes: [
-                            "mentor_id",
-                            "financial_year_id",
-                            "user_id",
-                            "institution_id",
-                            "mentor_title",
-                            "mentor_name",
-                            "mentor_name_vernacular",
-                            "mentor_mobile",
-                            "mentor_whatapp_mobile",
-                            "mentor_email",
-                            "date_of_birth",
-                            "gender"
-                        ],
-                        where: {
-                            [Op.and]: [
-                                whereClauseStatusPart,
-                                //whereClauseOfState
-                                // condition
-                            ]
-                        },
-                        include:
-                        {
-                            model: institutions,
-                            attributes: [
-                                "institution_id",
-                                "institution_code",
-                                "institution_name",
-                                "institution_name_vernacular"
-                            ],
-                            include: [
-                                {
-                                    model: places,
-                                    attributes: [
-                                        'place_id',
-                                        'place_type',
-                                        'place_name',
-                                        'place_name_vernacular'
-                                    ],
-                                    include: {
-                                        model: taluks,
-                                        attributes: [
-                                            'taluk_id',
-                                            'taluk_name',
-                                            'taluk_name_vernacular'
-
-                                        ],
-                                        include: {
-                                            model: blocks,
-                                            attributes: [
-                                                'block_id',
-                                                'block_name',
-                                                'block_name_vernacular'
-                                            ],
-                                            include: {
-                                                model: districts,
-                                                attributes: [
-                                                    'district_id',
-                                                    'district_name',
-                                                    'district_name_vernacular',
-                                                    'district_headquarters',
-                                                    'district_headquarters_vernacular'
-                                                ], where: {
-                                                    district_name: district_name
-                                                },
-                                                include: {
-                                                    model: states,
-                                                    attributes: [
-                                                        'state_id',
-                                                        'state_name',
-                                                        'state_name_vernacular'
-                                                    ]
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }, limit, offset
-                    })
-                    const result = this.getPagingData(responseOfFindAndCountAll, page, limit);
-                    data = result;
+                    let whereText
+                    if (district_name !== 'All Districts') {
+                        whereText = `and d.district_name = '${district_name}'`
+                    } else {
+                        whereText = ''
+                    }
+                    const responseOfFindAndCountAll = await db.query(`SELECT 
+                    mentor_id,
+                    financial_year_id,
+                    user_id,
+                    ins.institution_id,
+                    mentor_title,
+                    mentor_name,
+                    mentor_name_vernacular,
+                    mentor_mobile,
+                    mentor_whatapp_mobile,
+                    mentor_email,
+                    date_of_birth,
+                    gender,
+                    institution_code,
+                    institution_name,
+                    place_type,
+                    place_name,
+                    taluk_name,
+                    block_name,
+                    district_name,
+                    district_headquarters,
+                    state_name
+                FROM
+                    mentors AS m
+                        LEFT JOIN
+                    institutions AS ins ON m.institution_id = ins.institution_id
+                        LEFT JOIN
+                    places AS p ON ins.place_id = p.place_id
+                        LEFT JOIN
+                    blocks AS b ON p.block_id = b.block_id
+                        LEFT JOIN
+                    districts AS d ON b.district_id = d.district_id
+                        LEFT JOIN
+                    taluks AS t ON d.district_id = t.district_id
+                        LEFT JOIN
+                    states AS s ON d.state_id = s.state_id
+                WHERE
+                    ins.status = 'ACTIVE' ${whereText};`, { type: QueryTypes.SELECT })
+                    data = responseOfFindAndCountAll;
                 } catch (error: any) {
                     return res.status(500).send(dispatcher(res, data, 'error'))
                 }
@@ -656,6 +606,12 @@ export default class MentorController extends BaseController {
             const arrayOfteams = teamResult.map((teamSingleresult: any) => {
                 return teamSingleresult.team_id;
             })
+
+            const resultIdeasDelete = await this.crudService.delete(ideas, { where: { team_id: arrayOfteams } })
+            if (resultIdeasDelete instanceof Error) {
+                throw resultIdeasDelete
+            }
+
             if (arrayOfteams && arrayOfteams.length > 0) {
                 const studentUserIds = await student.findAll({
                     where: { team_id: arrayOfteams },
