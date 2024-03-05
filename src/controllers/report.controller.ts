@@ -85,39 +85,39 @@ export default class ReportController extends BaseController {
                 whereText = ''
             }
             const mentorsResult = await db.query(`SELECT 
-                    mentor_title,
-                    mentor_name,
-                    mentor_name_vernacular,
-                    mentor_mobile,
-                    mentor_whatapp_mobile,
-                    mentor_email,
-                    date_of_birth,
-                    gender,
-                    institution_code,
-                    institution_name,
-                    place_type,
-                    place_name,
-                    taluk_name,
-                    block_name,
-                    district_name,
-                    district_headquarters,
-                    state_name
-                FROM
-                    mentors AS m
-                        LEFT JOIN
-                    institutions AS ins ON m.institution_id = ins.institution_id
-                    LEFT JOIN
-                    places AS p ON ins.place_id = p.place_id
-                    LEFT JOIN
-                    taluks AS t ON p.taluk_id = t.taluk_id
-                    LEFT JOIN
-                    blocks AS b ON t.block_id = b.block_id
-                    LEFT JOIN
-                    districts AS d ON b.district_id = d.district_id
-                    LEFT JOIN
-                    states AS s ON d.state_id = s.state_id
-                WHERE
-                    ins.status = 'ACTIVE' ${whereText};`, { type: QueryTypes.SELECT })
+            mentor_title,
+            mentor_name,
+            mentor_name_vernacular,
+            mentor_mobile,
+            mentor_whatapp_mobile,
+            mentor_email,
+            date_of_birth,
+            gender,
+            institution_code,
+            institution_name,
+            place_type,
+            place_name,
+            taluk_name,
+            block_name,
+            district_name,
+            district_headquarters,
+            state_name
+        FROM
+            mentors AS m
+                LEFT JOIN
+            institutions AS ins ON m.institution_id = ins.institution_id
+                LEFT JOIN
+            places AS p ON ins.place_id = p.place_id
+                LEFT JOIN
+            blocks AS b ON p.block_id = b.block_id
+                LEFT JOIN
+            districts AS d ON b.district_id = d.district_id
+                LEFT JOIN
+            taluks AS t ON d.district_id = t.district_id
+                LEFT JOIN
+            states AS s ON d.state_id = s.state_id
+        WHERE
+            ins.status = 'ACTIVE' ${whereText};`, { type: QueryTypes.SELECT })
             if (!mentorsResult) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
@@ -170,15 +170,15 @@ export default class ReportController extends BaseController {
             state_name_vernacular
         FROM
             institutions AS ins
-            LEFT JOIN
+                LEFT JOIN
             places AS p ON ins.place_id = p.place_id
-            LEFT JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-            LEFT JOIN
-            blocks AS b ON t.block_id = b.block_id
-            LEFT JOIN
+                LEFT JOIN
+            blocks AS b ON p.block_id = b.block_id
+                LEFT JOIN
             districts AS d ON b.district_id = d.district_id
-            LEFT JOIN
+                LEFT JOIN
+            taluks AS t ON d.district_id = t.district_id
+                LEFT JOIN
             states AS s ON d.state_id = s.state_id
         WHERE
             ins.status = 'ACTIVE'
@@ -240,8 +240,7 @@ export default class ReportController extends BaseController {
                 FROM
                     institutions AS ins
                 JOIN places AS p ON ins.place_id = p.place_id
-                JOIN taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN blocks AS b ON t.block_id = b.block_id
+                JOIN blocks AS b ON p.block_id = b.block_id
                 JOIN districts AS d ON b.district_id = d.district_id
                 JOIN states AS s ON d.state_id = s.state_id
                 LEFT JOIN mentors m ON ins.institution_id = m.institution_id
@@ -274,8 +273,7 @@ export default class ReportController extends BaseController {
                 FROM
                     institutions AS ins
                 JOIN places AS p ON ins.place_id = p.place_id
-                JOIN taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN blocks AS b ON t.block_id = b.block_id
+                JOIN blocks AS b ON p.block_id = b.block_id
                 JOIN districts AS d ON b.district_id = d.district_id
                 JOIN states AS s ON d.state_id = s.state_id
                 LEFT JOIN mentors m ON ins.institution_id = m.institution_id
@@ -305,9 +303,8 @@ export default class ReportController extends BaseController {
                         END) AS female_mentor_count
                 FROM
                     institutions AS ins
-                JOIN places AS p ON ins.place_id = p.place_id
-                JOIN taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN blocks AS b ON t.block_id = b.block_id
+                JOIN places AS p ON ins.place_id = p.place_id  
+                JOIN blocks AS b ON p.block_id = b.block_id
                 JOIN districts AS d ON b.district_id = d.district_id
                 JOIN states AS s ON d.state_id = s.state_id
                 LEFT JOIN mentors m ON ins.institution_id = m.institution_id
@@ -384,11 +381,11 @@ export default class ReportController extends BaseController {
                 LEFT JOIN
             places AS p ON ins.place_id = p.place_id
                 LEFT JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                LEFT JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 LEFT JOIN
             districts AS d ON b.district_id = d.district_id
+                LEFT JOIN
+            taluks AS t ON d.district_id = t.district_id
                 LEFT JOIN
             states AS s ON d.state_id = s.state_id
         WHERE
@@ -481,11 +478,11 @@ export default class ReportController extends BaseController {
                 LEFT JOIN
             places AS p ON ins.place_id = p.place_id
                 LEFT JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                LEFT JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 LEFT JOIN
             districts AS d ON b.district_id = d.district_id
+                LEFT JOIN
+            taluks AS t ON d.district_id = t.district_id
                 LEFT JOIN
             states AS s ON d.state_id = s.state_id
         WHERE
@@ -529,9 +526,7 @@ export default class ReportController extends BaseController {
                 JOIN
             places AS p ON ins.place_id = p.place_id
                 JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 JOIN
             districts AS d ON b.district_id = d.district_id
                 JOIN
@@ -549,9 +544,7 @@ export default class ReportController extends BaseController {
                 JOIN
             places AS p ON ins.place_id = p.place_id
                 JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 JOIN
             districts AS d ON b.district_id = d.district_id
                 JOIN
@@ -568,9 +561,7 @@ export default class ReportController extends BaseController {
                 JOIN
             places AS p ON ins.place_id = p.place_id
                 JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 JOIN
             districts AS d ON b.district_id = d.district_id
                 JOIN
@@ -598,9 +589,7 @@ export default class ReportController extends BaseController {
                 JOIN
             places AS p ON ins.place_id = p.place_id
                 JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 JOIN
             districts AS d ON b.district_id = d.district_id
                 JOIN
@@ -654,9 +643,7 @@ export default class ReportController extends BaseController {
                 JOIN
             places AS p ON ins.place_id = p.place_id
                 JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 JOIN
             districts AS d ON b.district_id = d.district_id
                 JOIN
@@ -675,9 +662,7 @@ export default class ReportController extends BaseController {
                 JOIN
             places AS p ON ins.place_id = p.place_id
                 JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 JOIN
             districts AS d ON b.district_id = d.district_id
                 JOIN
@@ -704,9 +689,7 @@ FROM
         JOIN
     places AS p ON ins.place_id = p.place_id
         JOIN
-    taluks AS t ON p.taluk_id = t.taluk_id
-        JOIN
-    blocks AS b ON t.block_id = b.block_id
+    blocks AS b ON p.block_id = b.block_id
         JOIN
     districts AS d ON b.district_id = d.district_id
         JOIN
@@ -730,9 +713,7 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
                 JOIN
             places AS p ON ins.place_id = p.place_id
                 JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 JOIN
             districts AS d ON b.district_id = d.district_id
                 JOIN
@@ -861,11 +842,11 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
                 LEFT JOIN
             places AS p ON ins.place_id = p.place_id
                 LEFT JOIN
-            taluks AS t ON p.taluk_id = t.taluk_id
-                LEFT JOIN
-            blocks AS b ON t.block_id = b.block_id
+            blocks AS b ON p.block_id = b.block_id
                 LEFT JOIN
             districts AS d ON b.district_id = d.district_id
+                LEFT JOIN
+            taluks AS t ON d.district_id = t.district_id
                 LEFT JOIN
             states AS s ON d.state_id = s.state_id
                 LEFT JOIN

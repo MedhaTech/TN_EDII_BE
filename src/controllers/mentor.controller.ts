@@ -325,11 +325,11 @@ export default class MentorController extends BaseController {
                         LEFT JOIN
                     places AS p ON ins.place_id = p.place_id
                         LEFT JOIN
-                    taluks AS t ON p.taluk_id = t.taluk_id
-                        LEFT JOIN
-                    blocks AS b ON t.block_id = b.block_id
+                    blocks AS b ON p.block_id = b.block_id
                         LEFT JOIN
                     districts AS d ON b.district_id = d.district_id
+                        LEFT JOIN
+                    taluks AS t ON d.district_id = t.district_id
                         LEFT JOIN
                     states AS s ON d.state_id = s.state_id
                 WHERE
