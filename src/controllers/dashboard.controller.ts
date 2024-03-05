@@ -1023,7 +1023,7 @@ export default class DashboardController extends BaseController {
             (SELECT 
                 team_id, status
             FROM
-                challenge_responses) AS temp ON te.team_id = temp.team_id
+                ideas) AS temp ON te.team_id = temp.team_id
         WHERE
             ins.status = 'ACTIVE'`, { type: QueryTypes.SELECT });
             const submittedCount = await db.query(`SELECT 
@@ -1038,7 +1038,7 @@ export default class DashboardController extends BaseController {
             (SELECT 
                 team_id, status
             FROM
-                challenge_responses
+                ideas
             WHERE
                 status = 'SUBMITTED') AS temp ON te.team_id = temp.team_id
         WHERE
