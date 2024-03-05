@@ -374,38 +374,39 @@ export default class institutionsController extends BaseController {
                             'place_name_vernacular'
                         ],
                         include: {
-                            model: taluks,
+                            model: blocks,
                             attributes: [
-                                'taluk_id',
-                                'taluk_name',
-                                'taluk_name_vernacular'
-
+                                'block_id',
+                                'block_name',
+                                'block_name_vernacular'
                             ],
                             include: {
-                                model: blocks,
+                                model: districts,
                                 attributes: [
-                                    'block_id',
-                                    'block_name',
-                                    'block_name_vernacular'
+                                    'district_id',
+                                    'district_name',
+                                    'district_name_vernacular',
+                                    'district_headquarters',
+                                    'district_headquarters_vernacular'
                                 ],
-                                include: {
-                                    model: districts,
+                                include: [{
+                                    model: states,
                                     attributes: [
-                                        'district_id',
-                                        'district_name',
-                                        'district_name_vernacular',
-                                        'district_headquarters',
-                                        'district_headquarters_vernacular'
+                                        'state_id',
+                                        'state_name',
+                                        'state_name_vernacular'
+                                    ]
+                                },
+                                {
+                                    model: taluks,
+                                    attributes: [
+                                        'taluk_id',
+                                        'taluk_name',
+                                        'taluk_name_vernacular'
+
                                     ],
-                                    include: {
-                                        model: states,
-                                        attributes: [
-                                            'state_id',
-                                            'state_name',
-                                            'state_name_vernacular'
-                                        ]
-                                    }
                                 }
+                                ]
                             }
                         }
                     },
@@ -541,8 +542,8 @@ export default class institutionsController extends BaseController {
             } else if (Object.keys(req.query).length !== 0) {
                 return res.status(400).send(dispatcher(res, '', 'error', 'Bad Request', 400));
             }
-            const { taluk_id } = newREQQuery
-            const result = await db.query(`select place_id,place_name from places where taluk_id = ${taluk_id};`, { type: QueryTypes.SELECT })
+            const { block_id } = newREQQuery
+            const result = await db.query(`select place_id,place_name from places where block_id = ${block_id};`, { type: QueryTypes.SELECT })
             return res.status(200).send(dispatcher(res, result, 'success'));
         } catch (error) {
             next(error);
