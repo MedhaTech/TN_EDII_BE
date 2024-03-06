@@ -248,7 +248,7 @@ export default class MentorController extends BaseController {
                                     'place_name',
                                     'place_name_vernacular'
                                 ],
-                                include: {
+                                include: [{
                                     model: blocks,
                                     attributes: [
                                         'block_id',
@@ -264,26 +264,25 @@ export default class MentorController extends BaseController {
                                             'district_headquarters',
                                             'district_headquarters_vernacular'
                                         ],
-                                        include: [{
+                                        include: {
                                             model: states,
                                             attributes: [
                                                 'state_id',
                                                 'state_name',
                                                 'state_name_vernacular'
                                             ]
-                                        },
-                                        {
-                                            model: taluks,
-                                            attributes: [
-                                                'taluk_id',
-                                                'taluk_name',
-                                                'taluk_name_vernacular'
-
-                                            ],
                                         }
-                                        ]
                                     }
-                                }
+                                },
+                                {
+                                    model: taluks,
+                                    attributes: [
+                                        'taluk_id',
+                                        'taluk_name',
+                                        'taluk_name_vernacular'
+
+                                    ],
+                                }]
                             }
                         ]
                     }
@@ -329,7 +328,7 @@ export default class MentorController extends BaseController {
                         LEFT JOIN
                     districts AS d ON b.district_id = d.district_id
                         LEFT JOIN
-                    taluks AS t ON d.district_id = t.district_id
+                    taluks AS t ON p.taluk_id = t.taluk_id
                         LEFT JOIN
                     states AS s ON d.state_id = s.state_id
                 WHERE

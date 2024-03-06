@@ -66,7 +66,7 @@ export default class authService {
                             'place_name',
                             'place_name_vernacular'
                         ],
-                        include: {
+                        include: [{
                             model: blocks,
                             attributes: [
                                 'block_id',
@@ -82,26 +82,25 @@ export default class authService {
                                     'district_headquarters',
                                     'district_headquarters_vernacular'
                                 ],
-                                include: [{
+                                include: {
                                     model: states,
                                     attributes: [
                                         'state_id',
                                         'state_name',
                                         'state_name_vernacular'
                                     ]
-                                },
-                                {
-                                    model: taluks,
-                                    attributes: [
-                                        'taluk_id',
-                                        'taluk_name',
-                                        'taluk_name_vernacular'
-    
-                                    ],
                                 }
-                            ]
                             }
-                        }
+                        },
+                        {
+                            model: taluks,
+                            attributes: [
+                                'taluk_id',
+                                'taluk_name',
+                                'taluk_name_vernacular'
+
+                            ],
+                        }]
                     },
                     {
                         model: institution_principals,
