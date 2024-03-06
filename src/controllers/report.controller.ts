@@ -23,7 +23,6 @@ import StudentDReportService from "../services/studentDReort.service";
 import IdeaReportService from "../services/ideaReort.service";
 import { institutions } from "../models/institutions.model";
 import { places } from "../models/places.model";
-import { taluks } from "../models/taluks.model";
 import { blocks } from "../models/blocks.model";
 import { districts } from "../models/districts.model";
 import { states } from "../models/states.model";
@@ -97,7 +96,6 @@ export default class ReportController extends BaseController {
             institution_name,
             place_type,
             place_name,
-            taluk_name,
             block_name,
             district_name,
             district_headquarters,
@@ -112,8 +110,6 @@ export default class ReportController extends BaseController {
             blocks AS b ON p.block_id = b.block_id
                 LEFT JOIN
             districts AS d ON b.district_id = d.district_id
-                LEFT JOIN
-            taluks AS t ON d.district_id = t.district_id
                 LEFT JOIN
             states AS s ON d.state_id = s.state_id
         WHERE
@@ -158,8 +154,6 @@ export default class ReportController extends BaseController {
             principal_email,
             place_name,
             place_name_vernacular,
-            taluk_name,
-            taluk_name_vernacular,
             block_name,
             block_name_vernacular,
             district_name,
@@ -176,8 +170,6 @@ export default class ReportController extends BaseController {
             blocks AS b ON p.block_id = b.block_id
                 LEFT JOIN
             districts AS d ON b.district_id = d.district_id
-                LEFT JOIN
-            taluks AS t ON d.district_id = t.district_id
                 LEFT JOIN
             states AS s ON d.state_id = s.state_id
         WHERE
@@ -347,7 +339,6 @@ export default class ReportController extends BaseController {
             state_name,
             district_name,
             block_name,
-            taluk_name,
             place_name,
             ins.principal_name,
             ins.principal_mobile,
@@ -384,8 +375,6 @@ export default class ReportController extends BaseController {
             blocks AS b ON p.block_id = b.block_id
                 LEFT JOIN
             districts AS d ON b.district_id = d.district_id
-                LEFT JOIN
-            taluks AS t ON d.district_id = t.district_id
                 LEFT JOIN
             states AS s ON d.state_id = s.state_id
         WHERE
@@ -426,7 +415,6 @@ export default class ReportController extends BaseController {
             state_name,
             district_name,
             block_name,
-            taluk_name,
             place_name,
             ins.principal_name,
             ins.principal_mobile,
@@ -481,8 +469,6 @@ export default class ReportController extends BaseController {
             blocks AS b ON p.block_id = b.block_id
                 LEFT JOIN
             districts AS d ON b.district_id = d.district_id
-                LEFT JOIN
-            taluks AS t ON d.district_id = t.district_id
                 LEFT JOIN
             states AS s ON d.state_id = s.state_id
         WHERE
@@ -801,7 +787,6 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
             state_name,
             district_name,
             block_name,
-            taluk_name,
             place_name,
             ins.principal_name,
             ins.principal_mobile,
@@ -845,8 +830,6 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
             blocks AS b ON p.block_id = b.block_id
                 LEFT JOIN
             districts AS d ON b.district_id = d.district_id
-                LEFT JOIN
-            taluks AS t ON d.district_id = t.district_id
                 LEFT JOIN
             states AS s ON d.state_id = s.state_id
                 LEFT JOIN
