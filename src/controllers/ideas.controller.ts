@@ -450,6 +450,7 @@ export default class ideasController extends BaseController {
                                     "evaluated_by",
                                     "evaluated_at",
                                     "evaluation_status",
+                                    "final_result",
                                     [
                                         db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
                                     ],
