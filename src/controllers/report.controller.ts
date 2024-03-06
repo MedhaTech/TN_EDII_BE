@@ -1,32 +1,13 @@
 import { Request, Response, NextFunction } from "express";
-import { mentor } from "../models/mentor.model";
-import { organization } from "../models/organization.model";
-import TranslationService from "../services/translation.service";
 import dispatcher from "../utils/dispatch.util";
 import db from "../utils/dbconnection.util"
-import { courseModuleSchema, courseModuleUpdateSchema } from "../validations/courseModule.validationa";
-import { translationSchema, translationUpdateSchema } from "../validations/translation.validations";
-import ValidationsHolder from "../validations/validationHolder";
-import { quiz_survey_response } from '../models/quiz_survey_response.model';
 import BaseController from "./base.controller";
-import { constents } from "../configs/constents.config";
-import { mentor_course_topic } from "../models/mentor_course_topic.model";
-import { internal, notFound } from "boom";
+import { notFound } from "boom";
 import { speeches } from "../configs/speeches.config";
-import ReportService from "../services/report.service";
-import { Op, QueryTypes } from 'sequelize';
-import { user } from "../models/user.model";
-import { team } from "../models/team.model";
-import { baseConfig } from "../configs/base.config";
+import { QueryTypes } from 'sequelize';
 import InstDReportService from "../services/instDReort.service";
 import StudentDReportService from "../services/studentDReort.service";
 import IdeaReportService from "../services/ideaReort.service";
-import { institutions } from "../models/institutions.model";
-import { places } from "../models/places.model";
-import { blocks } from "../models/blocks.model";
-import { districts } from "../models/districts.model";
-import { states } from "../models/states.model";
-//import { reflective_quiz_response } from '../models/reflective_quiz_response.model';
 
 export default class ReportController extends BaseController {
 
