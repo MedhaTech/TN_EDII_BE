@@ -119,74 +119,48 @@ export default class ideasController extends BaseController {
         }
         if (id) {
             const newParamId = await this.authService.decryptGlobal(req.params.id);
-            where[`${this.model}_id`] = newParamId;
+            where[`idea_id`] = newParamId;
             try {
                 if (level && typeof level == 'string') {
                     switch (level) {
                         case 'L1':
-                            data = await this.crudService.findOne(modelClass, {
+                            data = await this.crudService.findOne(ideas, {
                                 attributes: [
-                                    "challenge_response_id",
-                                    "challenge_id",
-                                    "sdg",
-                                    "state",
-                                    "sub_category",
+                                    "idea_id",
+                                    "financial_year_id",
+                                    "theme_problem_id",
                                     "team_id",
-                                    "response",
+                                    "idea_title",
+                                    "solution_statement",
+                                    "detailed_solution",
+                                    "prototype_available",
+                                    "Prototype_file",
+                                    "idea_available",
+                                    "self_declaration",
+                                    "status",
                                     "initiated_by",
-                                    "created_at",
                                     "submitted_at",
+                                    "created_by",
+                                    "created_at",
+                                    "verified_by",
+                                    "verified_at",
+                                    "district",
                                     "evaluated_by",
                                     "evaluated_at",
-                                    "evaluation_status",
-                                    "status",
-                                    "rejected_reason",
-                                    "rejected_reasonSecond",
                                     [
-                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_name'
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`initiated_by\` )`), 'initiated_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
-                                    ]
-                                ],
-                                where: {
-                                    [Op.and]: [
-                                        where,
-                                        condition
-                                    ]
-                                }
-                            });
-                            break;
-                        case 'L2':
-                            data = await this.crudService.findOne(modelClass, {
-                                attributes: [
-                                    "challenge_response_id",
-                                    "challenge_id",
-                                    "sdg",
-                                    "state",
-                                    "sub_category",
-                                    "team_id",
-                                    "response",
-                                    "initiated_by",
-                                    "created_at",
-                                    "submitted_at",
-                                    "evaluated_by",
-                                    "evaluated_at",
-                                    "evaluation_status",
-                                    "status",
-                                    "rejected_reason",
-                                    "rejected_reasonSecond",
-                                    [
-                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_name'
+                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`ideas\`.\`team_id\` )`), 'team_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`verified_by\` )`), 'verified_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
+                                        db.literal(`(SELECT institution_code FROM teams AS t JOIN mentors AS m ON t.mentor_id = m.mentor_id JOIN institutions AS ins ON m.institution_id = ins.institution_id where t.team_id = \`ideas\`.\`team_id\`)`), 'institution_code'
                                     ]
                                 ],
                                 where: {
@@ -196,12 +170,70 @@ export default class ideasController extends BaseController {
                                     ]
                                 },
                                 include: {
+                                    model: themes_problems,
+                                    attributes: [
+                                        "theme_problem_id",
+                                        "theme_name",
+                                        "problem_statement",
+                                        "problem_statement_description",
+                                        "status"
+                                    ]
+                                }
+                            });
+                            break;
+                        case 'L2':
+                            data = await this.crudService.findOne(ideas, {
+                                attributes: [
+                                    "idea_id",
+                                    "financial_year_id",
+                                    "theme_problem_id",
+                                    "team_id",
+                                    "idea_title",
+                                    "solution_statement",
+                                    "detailed_solution",
+                                    "prototype_available",
+                                    "Prototype_file",
+                                    "idea_available",
+                                    "self_declaration",
+                                    "status",
+                                    "initiated_by",
+                                    "submitted_at",
+                                    "created_by",
+                                    "created_at",
+                                    "verified_by",
+                                    "verified_at",
+                                    "district",
+                                    "evaluated_by",
+                                    "evaluated_at",
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`initiated_by\` )`), 'initiated_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`ideas\`.\`team_id\` )`), 'team_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`verified_by\` )`), 'verified_name'
+                                    ],
+                                    [
+                                        db.literal(`(SELECT institution_code FROM teams AS t JOIN mentors AS m ON t.mentor_id = m.mentor_id JOIN institutions AS ins ON m.institution_id = ins.institution_id where t.team_id = \`ideas\`.\`team_id\`)`), 'institution_code'
+                                    ]
+                                ],
+                                where: {
+                                    [Op.and]: [
+                                        where,
+                                        condition
+                                    ]
+                                },
+                                include: [{
                                     model: evaluator_rating,
                                     required: false,
                                     attributes: [
                                         'evaluator_rating_id',
                                         'evaluator_id',
-                                        'challenge_response_id',
+                                        'idea_id',
                                         'status',
                                         'level',
                                         'param_1',
@@ -217,47 +249,72 @@ export default class ideasController extends BaseController {
                                             db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = evaluator_ratings.created_by)`), 'rated_evaluated_name'
                                         ]
                                     ]
-                                }
+                                },
+                                {
+                                    model: themes_problems,
+                                    attributes: [
+                                        "theme_problem_id",
+                                        "theme_name",
+                                        "problem_statement",
+                                        "problem_statement_description",
+                                        "status"
+                                    ]
+                                }]
                             });
                             break;
                         case level != 'L1' && 'L2':
                             break;
                     }
                 }
-                data = await this.crudService.findOne(modelClass, {
+                data = await this.crudService.findOne(ideas, {
                     attributes: [
-                        "challenge_response_id",
-                        "challenge_id",
-                        "sdg",
-                        "state",
-                        "sub_category",
+                        "idea_id",
+                        "financial_year_id",
+                        "theme_problem_id",
                         "team_id",
-                        "response",
-                        "initiated_by",
-                        "created_at",
-                        "submitted_at",
-                        "evaluated_by",
-                        "evaluated_at",
-                        "evaluation_status",
+                        "idea_title",
+                        "solution_statement",
+                        "detailed_solution",
+                        "prototype_available",
+                        "Prototype_file",
+                        "idea_available",
+                        "self_declaration",
                         "status",
-                        "rejected_reason",
-                        "rejected_reasonSecond",
+                        "initiated_by",
+                        "submitted_at",
+                        "created_by",
+                        "created_at",
+                        "verified_by",
+                        "verified_at",
+                        "district",
+                        "evaluation_status",
+                        "evaluated_at",
                         [
-                            db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_name'
+                            db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
                         ],
                         [
-                            db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                            db.literal(`(SELECT institution_code FROM teams AS t JOIN mentors AS m ON t.mentor_id = m.mentor_id JOIN institutions AS ins ON m.institution_id = ins.institution_id where t.team_id = \`ideas\`.\`team_id\`)`), 'institution_code'
                         ],
                         [
-                            db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
-                        ]
+                            db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`ideas\`.\`team_id\` )`), 'team_name'
+                        ],
                     ],
                     where: {
                         [Op.and]: [
                             where,
                             condition
                         ]
-                    }
+                    },
+                    include: {
+                        model: themes_problems,
+                        attributes: [
+                            "theme_problem_id",
+                            "theme_name",
+                            "problem_statement",
+                            "problem_statement_description",
+                            "status"
+                        ]
+                    },
                 });
             } catch (error) {
                 return res.status(500).send(dispatcher(res, data, 'error'))
@@ -278,55 +335,74 @@ export default class ideasController extends BaseController {
                                     }
                                 }
                             }
-                            responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
+                            responseOfFindAndCountAll = await this.crudService.findAndCountAll(ideas, {
                                 attributes: [
-                                    "challenge_response_id",
-                                    "challenge_id",
-                                    "sdg",
-                                    "state",
-                                    "sub_category",
+                                    "idea_id",
+                                    "financial_year_id",
+                                    "theme_problem_id",
                                     "team_id",
-                                    "response",
+                                    "idea_title",
+                                    "solution_statement",
+                                    "detailed_solution",
+                                    "prototype_available",
+                                    "Prototype_file",
+                                    "idea_available",
+                                    "self_declaration",
+                                    "status",
                                     "initiated_by",
-                                    "created_at",
                                     "submitted_at",
+                                    "created_by",
+                                    "created_at",
+                                    "verified_by",
+                                    "verified_at",
+                                    "district",
                                     "evaluated_by",
                                     "evaluated_at",
-                                    "evaluation_status",
-                                    "status",
-                                    "rejected_reason",
-                                    "rejected_reasonSecond",
-                                    "final_result", "district",
                                     [
-                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`initiated_by\` )`), 'initiated_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`challenge_response\`.\`team_id\` )`), 'team_name'
+                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`ideas\`.\`team_id\` )`), 'team_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT JSON_ARRAYAGG(full_name) FROM unisolve_db.students  AS s LEFT OUTER JOIN unisolve_db.teams AS t ON s.team_id = t.team_id WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_members'
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`verified_by\` )`), 'verified_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT mentorTeamOrg.organization_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_name'
+                                        db.literal(`(SELECT institution_code FROM teams AS t JOIN mentors AS m ON t.mentor_id = m.mentor_id JOIN institutions AS ins ON m.institution_id = ins.institution_id where t.team_id = \`ideas\`.\`team_id\`)`), 'institution_code'
                                     ],
-                                    [
-                                        db.literal(`(SELECT mentorTeamOrg.organization_code FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id = \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_code'
-                                    ],
-                                    [
-                                        db.literal(`(SELECT full_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mentor_name'
-                                    ],
-                                    [
-                                        db.literal(`(SELECT mentorTeamOrg.category FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'category'
-                                    ]
+                                    // [
+                                    //     db.literal(`(SELECT JSON_ARRAYAGG(full_name) FROM unisolve_db.students  AS s LEFT OUTER JOIN unisolve_db.teams AS t ON s.team_id = t.team_id WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_members'
+                                    // ],
+                                    // [
+                                    //     db.literal(`(SELECT mentorTeamOrg.organization_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_name'
+                                    // ],
+
+                                    // [
+                                    //     db.literal(`(SELECT full_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mentor_name'
+                                    // ],
+                                    // [
+                                    //     db.literal(`(SELECT mentorTeamOrg.category FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'category'
+                                    // ]
                                 ],
+                                include: {
+                                    model: themes_problems,
+                                    attributes: [
+                                        "theme_problem_id",
+                                        "theme_name",
+                                        "problem_statement",
+                                        "problem_statement_description",
+                                        "status"
+                                    ]
+                                },
                                 where: {
                                     [Op.and]: [
                                         condition,
                                         whereClauseStatusPart,
                                         additionalFilter,
+                                        { verified_by: { [Op.ne]: null } }
                                     ]
                                 }, limit, offset,
                             });
@@ -339,59 +415,56 @@ export default class ideasController extends BaseController {
                             whereClauseStatusPart['final_result'] = null;
                             if (yetToProcessList) {
                                 if (yetToProcessList && yetToProcessList == 'L2') {
-                                    groupByClausePart = [`challenge_response.challenge_response_id`];
-                                    havingClausePart = db.Sequelize.where(db.Sequelize.fn('count', db.Sequelize.col(`evaluator_ratings.challenge_response_id`)), {
+                                    groupByClausePart = [`ideas.idea_id`];
+                                    havingClausePart = db.Sequelize.where(db.Sequelize.fn('count', db.Sequelize.col(`evaluator_ratings.idea_id`)), {
                                         [Op.lt]: 3
                                     })
                                 }
                             } else {
-                                groupByClausePart = [`evaluator_ratings.challenge_response_id`];
-                                havingClausePart = db.Sequelize.where(db.Sequelize.fn('count', db.Sequelize.col(`evaluator_ratings.challenge_response_id`)), {
+                                groupByClausePart = [`evaluator_ratings.idea_id`];
+                                havingClausePart = db.Sequelize.where(db.Sequelize.fn('count', db.Sequelize.col(`evaluator_ratings.idea_id`)), {
                                     [Op.gte]: 3
                                 })
                             }
-                            responseOfFindAndCountAll = await this.crudService.findAndCountAll(modelClass, {
+                            responseOfFindAndCountAll = await this.crudService.findAndCountAll(ideas, {
                                 attributes: [
-                                    "challenge_response_id",
-                                    "challenge_id",
-                                    "sdg",
-                                    "state",
-                                    "sub_category",
+                                    "idea_id",
+                                    "financial_year_id",
+                                    "theme_problem_id",
                                     "team_id",
-                                    "response",
+                                    "idea_title",
+                                    "solution_statement",
+                                    "detailed_solution",
+                                    "prototype_available",
+                                    "Prototype_file",
+                                    "idea_available",
+                                    "self_declaration",
+                                    "status",
                                     "initiated_by",
-                                    "created_at",
                                     "submitted_at",
+                                    "created_by",
+                                    "created_at",
+                                    "verified_by",
+                                    "verified_at",
+                                    "district",
                                     "evaluated_by",
                                     "evaluated_at",
                                     "evaluation_status",
-                                    "status",
-                                    "rejected_reason",
-                                    "rejected_reasonSecond",
-                                    "final_result", "district",
+                                    "final_result",
                                     [
-                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`evaluated_by\` )`), 'evaluated_name'
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`challenge_response\`.\`initiated_by\` )`), 'initiated_name'
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`initiated_by\` )`), 'initiated_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`challenge_response\`.\`team_id\` )`), 'team_name'
+                                        db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`ideas\`.\`team_id\` )`), 'team_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT JSON_ARRAYAGG(full_name) FROM unisolve_db.students  AS s LEFT OUTER JOIN unisolve_db.teams AS t ON s.team_id = t.team_id WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_members'
+                                        db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = \`ideas\`.\`verified_by\` )`), 'verified_name'
                                     ],
                                     [
-                                        db.literal(`(SELECT mentorTeamOrg.organization_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_name'
-                                    ],
-                                    [
-                                        db.literal(`(SELECT mentorTeamOrg.organization_code FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_code'
-                                    ],
-                                    [
-                                        db.literal(`(SELECT full_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mentor_name'
-                                    ],
-                                    [
-                                        db.literal(`(SELECT mentorTeamOrg.category FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_responses\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'category'
+                                        db.literal(`(SELECT institution_code FROM teams AS t JOIN mentors AS m ON t.mentor_id = m.mentor_id JOIN institutions AS ins ON m.institution_id = ins.institution_id where t.team_id = \`ideas\`.\`team_id\`)`), 'institution_code'
                                     ]
                                 ],
                                 where: {
@@ -407,38 +480,48 @@ export default class ideasController extends BaseController {
                                     required: false,
                                     attributes: [
                                         [
-                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_1) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_1'
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_1) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_1'
                                         ],
                                         [
-                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_2'
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_2'
                                         ],
                                         [
-                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_3) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_3'
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_3) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_3'
                                         ],
                                         [
-                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_4) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_4'
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_4) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_4'
                                         ],
                                         [
-                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_5) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'param_5'
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(param_5) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_5'
                                         ],
                                         [
-                                            db.literal(`(SELECT  JSON_ARRAYAGG(comments) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'comments'
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(comments) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'comments'
                                         ],
                                         [
-                                            db.literal(`(SELECT  JSON_ARRAYAGG(overall) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'overall'
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(overall) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'overall'
                                         ],
                                         [
-                                            db.literal(`(SELECT ROUND(AVG(CAST(overall AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'overall_avg'
+                                            db.literal(`(SELECT ROUND(AVG(CAST(overall AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'overall_avg'
                                         ],
                                         [
-                                            db.literal(`(SELECT  JSON_ARRAYAGG(created_at) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'created_at'
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(created_at) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'created_at'
                                         ],
                                         [
-                                            db.literal(`(SELECT  JSON_ARRAYAGG(evaluator_id) FROM unisolve_db.evaluator_ratings as rating WHERE rating.challenge_response_id = \`challenge_response\`.\`challenge_response_id\`)`), 'evaluator_id'
+                                            db.literal(`(SELECT  JSON_ARRAYAGG(evaluator_id) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'evaluator_id'
                                         ],
                                         [
                                             db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = evaluator_ratings.created_by)`), 'rated_evaluated_name'
                                         ]
+                                    ]
+                                },
+                                {
+                                    model: themes_problems,
+                                    attributes: [
+                                        "theme_problem_id",
+                                        "theme_name",
+                                        "problem_statement",
+                                        "problem_statement_description",
+                                        "status"
                                     ]
                                 }],
                                 group: groupByClausePart,
@@ -478,21 +561,21 @@ export default class ideasController extends BaseController {
                             [
                                 db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
                             ],
-                            // [
-                            //     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`initiated_by\` )`), 'initiated_name'
-                            // ],
+                            [
+                                db.literal(`(SELECT institution_code FROM teams AS t JOIN mentors AS m ON t.mentor_id = m.mentor_id JOIN institutions AS ins ON m.institution_id = ins.institution_id where t.team_id = \`ideas\`.\`team_id\`)`), 'institution_code'
+                            ],
                             [
                                 db.literal(`(SELECT team_name FROM teams As t WHERE t.team_id =  \`ideas\`.\`team_id\` )`), 'team_name'
                             ],
+                            // [
+                            //     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`initiated_by\` )`), 'initiated_name'
+                            // ],
                             // [
                             //     db.literal(`(SELECT JSON_ARRAYAGG(full_name) FROM unisolve_db.students  AS s LEFT OUTER JOIN unisolve_db.teams AS t ON s.team_id = t.team_id WHERE t.team_id = \`challenge_response\`.\`team_id\` )`), 'team_members'
                             // ],
                             // [
                             //     db.literal(`(SELECT mentorTeamOrg.organization_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id LEFT OUTER JOIN organizations AS mentorTeamOrg ON mentorTeam.organization_code = mentorTeamOrg.organization_code WHERE challenge_responses.team_id =  \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'organization_name'
                             // ],
-                            [
-                                db.literal(`(SELECT institution_code FROM teams AS t JOIN mentors AS m ON t.mentor_id = m.mentor_id JOIN institutions AS ins ON m.institution_id = ins.institution_id where t.team_id = \`ideas\`.\`team_id\`)`), 'institution_code'
-                            ],
                             // [
                             //     db.literal(`(SELECT full_name FROM challenge_responses AS challenge_responses LEFT OUTER JOIN teams AS team ON challenge_response.team_id = team.team_id LEFT OUTER JOIN mentors AS mentorTeam ON team.mentor_id = mentorTeam.mentor_id WHERE challenge_responses.team_id = \`challenge_response\`.\`team_id\` GROUP BY challenge_response.team_id)`), 'mentor_name'
                             // ],
