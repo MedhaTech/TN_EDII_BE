@@ -260,7 +260,7 @@ export default class ReportController extends BaseController {
                 LEFT JOIN mentors m ON ins.institution_id = m.institution_id
                 WHERE
                     ins.status = 'ACTIVE'
-                GROUP BY d.district_name) AS disWiseCounts ON districts.district_name = disWiseCounts.district_name) AS org 
+                GROUP BY d.district_name) AS disWiseCounts ON districts.district_name = disWiseCounts.district_name ORDER BY districts.district_name) AS org 
             UNION ALL SELECT 
                 'Total',
                 SUM(institution_count),
@@ -527,7 +527,7 @@ export default class ReportController extends BaseController {
             LEFT JOIN mentors m ON ins.institution_id = m.institution_id
             WHERE
                 ins.status = 'ACTIVE'
-            GROUP BY d.district_name) AS disWiseCount ON districts.district_name = disWiseCount.district_name`, { type: QueryTypes.SELECT });
+            GROUP BY d.district_name) AS disWiseCount ON districts.district_name = disWiseCount.district_name ORDER BY districts.district_name`, { type: QueryTypes.SELECT });
             const teamCount = await db.query(`SELECT 
             d.district_name, COUNT(te.team_id) AS totalTeams
         FROM
@@ -628,7 +628,7 @@ export default class ReportController extends BaseController {
             LEFT JOIN teams AS te ON m.mentor_id = te.mentor_id
             WHERE
                 ins.status = 'ACTIVE'
-            GROUP BY d.district_name) AS disWiseCount ON districts.district_name = disWiseCount.district_name`, { type: QueryTypes.SELECT });
+            GROUP BY d.district_name) AS disWiseCount ON districts.district_name = disWiseCount.district_name ORDER BY districts.district_name`, { type: QueryTypes.SELECT });
             const studentCountDetails = await db.query(`SELECT 
             d.district_name, COUNT(st.student_id) AS totalstudent
         FROM
