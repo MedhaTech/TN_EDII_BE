@@ -361,6 +361,7 @@ export default class ideasController extends BaseController {
                                     "district",
                                     "evaluated_by",
                                     "evaluated_at",
+                                    "evaluation_status",
                                     [
                                         db.literal(`(SELECT full_name FROM users As s WHERE s.user_id =  \`ideas\`.\`evaluated_by\` )`), 'evaluated_name'
                                     ],
@@ -1419,62 +1420,73 @@ export default class ideasController extends BaseController {
                         where.liter,
                     ]
                 },
-                include: [{
-                    model: evaluator_rating,
-                    where: where,
-                    required: false,
-                    attributes: [
-                        [
-                            db.literal(`(SELECT  JSON_ARRAYAGG(param_1) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_1'
-                        ],
-                        [
-                            db.literal(`(SELECT ROUND(AVG(CAST(param_1 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_1_avg'
-                        ],
-                        [
-                            db.literal(`(SELECT  JSON_ARRAYAGG(param_2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_2'
-                        ],
-                        [
-                            db.literal(`(SELECT ROUND(AVG(CAST(param_2 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_2_avg'
-                        ],
-                        [
-                            db.literal(`(SELECT  JSON_ARRAYAGG(param_3) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_3'
-                        ],
-                        [
-                            db.literal(`(SELECT ROUND(AVG(CAST(param_3 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_3_avg'
-                        ],
+                include: [
+                    {
+                        model: themes_problems,
+                        attributes: [
+                            "theme_problem_id",
+                            "theme_name",
+                            "problem_statement",
+                            "problem_statement_description",
+                            "status"
+                        ]
+                    },
+                    {
+                        model: evaluator_rating,
+                        where: where,
+                        required: false,
+                        attributes: [
+                            [
+                                db.literal(`(SELECT  JSON_ARRAYAGG(param_1) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_1'
+                            ],
+                            [
+                                db.literal(`(SELECT ROUND(AVG(CAST(param_1 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_1_avg'
+                            ],
+                            [
+                                db.literal(`(SELECT  JSON_ARRAYAGG(param_2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_2'
+                            ],
+                            [
+                                db.literal(`(SELECT ROUND(AVG(CAST(param_2 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_2_avg'
+                            ],
+                            [
+                                db.literal(`(SELECT  JSON_ARRAYAGG(param_3) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_3'
+                            ],
+                            [
+                                db.literal(`(SELECT ROUND(AVG(CAST(param_3 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_3_avg'
+                            ],
 
-                        [
-                            db.literal(`(SELECT  JSON_ARRAYAGG(param_4) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_4'
-                        ],
-                        [
-                            db.literal(`(SELECT ROUND(AVG(CAST(param_4 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_4_avg'
-                        ],
-                        [
-                            db.literal(`(SELECT  JSON_ARRAYAGG(param_5) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_5'
-                        ],
-                        [
-                            db.literal(`(SELECT ROUND(AVG(CAST(param_5 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_5_avg'
-                        ],
-                        [
-                            db.literal(`(SELECT  JSON_ARRAYAGG(comments) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'comments'
-                        ],
-                        [
-                            db.literal(`(SELECT  JSON_ARRAYAGG(overall) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'overall'
-                        ],
-                        [
-                            db.literal(`(SELECT ROUND(AVG(CAST(overall AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'overall_avg'
-                        ],
-                        [
-                            db.literal(`(SELECT  JSON_ARRAYAGG(created_at) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'created_at'
-                        ],
-                        [
-                            db.literal(`(SELECT  JSON_ARRAYAGG(evaluator_id) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'evaluator_id'
-                        ],
-                        // [
-                        //     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = evaluator_ratings.created_by)`), 'rated_evaluated_name'
-                        // ]
-                    ]
-                }], limit, offset, subQuery: false
+                            [
+                                db.literal(`(SELECT  JSON_ARRAYAGG(param_4) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_4'
+                            ],
+                            [
+                                db.literal(`(SELECT ROUND(AVG(CAST(param_4 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_4_avg'
+                            ],
+                            [
+                                db.literal(`(SELECT  JSON_ARRAYAGG(param_5) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_5'
+                            ],
+                            [
+                                db.literal(`(SELECT ROUND(AVG(CAST(param_5 AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'param_5_avg'
+                            ],
+                            [
+                                db.literal(`(SELECT  JSON_ARRAYAGG(comments) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'comments'
+                            ],
+                            [
+                                db.literal(`(SELECT  JSON_ARRAYAGG(overall) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'overall'
+                            ],
+                            [
+                                db.literal(`(SELECT ROUND(AVG(CAST(overall AS FLOAT)), 2) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'overall_avg'
+                            ],
+                            [
+                                db.literal(`(SELECT  JSON_ARRAYAGG(created_at) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'created_at'
+                            ],
+                            [
+                                db.literal(`(SELECT  JSON_ARRAYAGG(evaluator_id) FROM unisolve_db.evaluator_ratings as rating WHERE rating.idea_id = \`ideas\`.\`idea_id\`)`), 'evaluator_id'
+                            ],
+                            // [
+                            //     db.literal(`(SELECT full_name FROM users As s WHERE s.user_id = evaluator_ratings.created_by)`), 'rated_evaluated_name'
+                            // ]
+                        ]
+                    }], limit, offset, subQuery: false
             });
             if (!data) {
                 throw badRequest(data.message)
