@@ -232,6 +232,14 @@ export default class ReportController extends BaseController {
                 org.institution_count - (org.uniqueRegInstitution) AS total_not_registered_mentor
             FROM
                 (SELECT 
+                    districts.district_name,
+                        COALESCE(institution_count, 0) AS institution_count,
+                        COALESCE(uniqueRegInstitution, 0) AS uniqueRegInstitution,
+                        COALESCE(male_mentor_count, 0) AS male_mentor_count,
+                        COALESCE(female_mentor_count, 0) AS female_mentor_count
+                FROM
+                    districts
+                LEFT JOIN (SELECT 
                     d.district_name,
                         COUNT(DISTINCT ins.institution_id) AS institution_count,
                         COUNT(DISTINCT m.institution_id) AS uniqueRegInstitution,
@@ -252,7 +260,7 @@ export default class ReportController extends BaseController {
                 LEFT JOIN mentors m ON ins.institution_id = m.institution_id
                 WHERE
                     ins.status = 'ACTIVE'
-                GROUP BY d.district_name) AS org 
+                GROUP BY d.district_name) AS disWiseCounts ON districts.district_name = disWiseCounts.district_name ORDER BY districts.district_name) AS org 
             UNION ALL SELECT 
                 'Total',
                 SUM(institution_count),
@@ -276,7 +284,7 @@ export default class ReportController extends BaseController {
                         END) AS female_mentor_count
                 FROM
                     institutions AS ins
-                JOIN places AS p ON ins.place_id = p.place_id  
+                JOIN places AS p ON ins.place_id = p.place_id
                 JOIN blocks AS b ON p.block_id = b.block_id
                 JOIN districts AS d ON b.district_id = d.district_id
                 JOIN states AS s ON d.state_id = s.state_id
@@ -504,23 +512,22 @@ export default class ReportController extends BaseController {
             ins.status = 'ACTIVE' ${wherefilter}
         GROUP BY d.district_name;`, { type: QueryTypes.SELECT });
             const summary = await db.query(`SELECT 
-            d.district_name,
-            COUNT(m.mentor_id) AS totalReg
+            districts.district_name, COALESCE(totalReg, 0) AS totalReg
         FROM
-            institutions AS ins
-                JOIN
-            places AS p ON ins.place_id = p.place_id
-                JOIN
-            blocks AS b ON p.block_id = b.block_id
-                JOIN
-            districts AS d ON b.district_id = d.district_id
-                JOIN
-            states AS s ON d.state_id = s.state_id
+            districts
                 LEFT JOIN
-            mentors m ON ins.institution_id = m.institution_id
-        WHERE
-            ins.status = 'ACTIVE' ${wherefilter}
-        GROUP BY d.district_name;`, { type: QueryTypes.SELECT });
+            (SELECT 
+                d.district_name, COUNT(m.mentor_id) AS totalReg
+            FROM
+                institutions AS ins
+            JOIN places AS p ON ins.place_id = p.place_id
+            JOIN blocks AS b ON p.block_id = b.block_id
+            JOIN districts AS d ON b.district_id = d.district_id
+            JOIN states AS s ON d.state_id = s.state_id
+            LEFT JOIN mentors m ON ins.institution_id = m.institution_id
+            WHERE
+                ins.status = 'ACTIVE'
+            GROUP BY d.district_name) AS disWiseCount ON districts.district_name = disWiseCount.district_name ORDER BY districts.district_name`, { type: QueryTypes.SELECT });
             const teamCount = await db.query(`SELECT 
             d.district_name, COUNT(te.team_id) AS totalTeams
         FROM
@@ -604,24 +611,24 @@ export default class ReportController extends BaseController {
                 wherefilter = `&& d.district_name= '${district_name}'`;
             }
             const summary = await db.query(`SELECT 
-            d.district_name, COUNT(te.team_id) AS totalTeams
+            districts.district_name,
+            COALESCE(totalTeams, 0) AS totalTeams
         FROM
-            institutions AS ins
-                JOIN
-            places AS p ON ins.place_id = p.place_id
-                JOIN
-            blocks AS b ON p.block_id = b.block_id
-                JOIN
-            districts AS d ON b.district_id = d.district_id
-                JOIN
-            states AS s ON d.state_id = s.state_id
+            districts
                 LEFT JOIN
-            mentors m ON ins.institution_id = m.institution_id
-                LEFT JOIN
-            teams AS te ON m.mentor_id = te.mentor_id
-        WHERE
-            ins.status = 'ACTIVE' ${wherefilter}
-        GROUP BY d.district_name;`, { type: QueryTypes.SELECT });
+            (SELECT 
+                d.district_name, COUNT(te.team_id) AS totalTeams
+            FROM
+                institutions AS ins
+            JOIN places AS p ON ins.place_id = p.place_id
+            JOIN blocks AS b ON p.block_id = b.block_id
+            JOIN districts AS d ON b.district_id = d.district_id
+            JOIN states AS s ON d.state_id = s.state_id
+            LEFT JOIN mentors m ON ins.institution_id = m.institution_id
+            LEFT JOIN teams AS te ON m.mentor_id = te.mentor_id
+            WHERE
+                ins.status = 'ACTIVE'
+            GROUP BY d.district_name) AS disWiseCount ON districts.district_name = disWiseCount.district_name ORDER BY districts.district_name`, { type: QueryTypes.SELECT });
             const studentCountDetails = await db.query(`SELECT 
             d.district_name, COUNT(st.student_id) AS totalstudent
         FROM
