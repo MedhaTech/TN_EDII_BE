@@ -584,6 +584,14 @@ export default class ideasController extends BaseController {
                             break;
                     }
                 } else {
+                    let submitedWhereCodition = {}
+                    if (whereClauseStatusPart.status === 'SUBMITTED') {
+                        submitedWhereCodition = { verified_by: { [Op.ne]: null } }
+                    }
+                    if (whereClauseStatusPart.status === 'DRAFT') {
+                        submitedWhereCodition = { verified_by: { [Op.is]: null } }
+                        whereClauseStatusPart = {}
+                    }
                     responseOfFindAndCountAll = await this.crudService.findAndCountAll(ideas, {
                         attributes: [
                             "idea_id",
@@ -665,6 +673,7 @@ export default class ideasController extends BaseController {
                                 condition,
                                 whereClauseStatusPart,
                                 additionalFilter,
+                                submitedWhereCodition
                             ]
                         }, limit, offset,
                     });
@@ -877,7 +886,7 @@ export default class ideasController extends BaseController {
             let result: any = {};
             let proxyAgent = new HttpsProxyAgent('http://10.236.241.101:9191');
             let s3
-            if (process.env.ISAWSSERVER) {
+            if (process.env.ISAWSSERVER === 'YES') {
                 s3 = new S3({
                     apiVersion: '2006-03-01',
                     region: process.env.AWS_REGION,

@@ -679,12 +679,12 @@ export default class DashboardController extends BaseController {
         }
         try {
             let response: any = {};
-            const submitted_count = await db.query("SELECT count(idea_id) as 'submitted_count' FROM ideas where status = 'SUBMITTED'", { type: QueryTypes.SELECT });
+            const submitted_count = await db.query("SELECT count(idea_id) as 'submitted_count' FROM ideas where status = 'SUBMITTED' && verified_by IS NOT NULL", { type: QueryTypes.SELECT });
             const selected_round_one_count = await db.query("SELECT count(idea_id) as 'selected_round_one_count' FROM ideas where evaluation_status = 'SELECTEDROUND1'", { type: QueryTypes.SELECT });
             const rejected_round_one_count = await db.query("SELECT count(idea_id) as 'rejected_round_one_count' FROM ideas where evaluation_status = 'REJECTEDROUND1'", { type: QueryTypes.SELECT });
             const l2_yet_to_processed = await db.query("SELECT COUNT(*) AS l2_yet_to_processed FROM l1_accepted;", { type: QueryTypes.SELECT });
             const l2_processed = await db.query("SELECT idea_id, count(idea_id) AS l2_processed FROM unisolve_db.evaluator_ratings group by idea_id HAVING COUNT(idea_id) > 2", { type: QueryTypes.SELECT });
-            const draft_count = await db.query("SELECT count(idea_id) as 'draft_count' FROM ideas where status = 'DRAFT'", { type: QueryTypes.SELECT });
+            const draft_count = await db.query("SELECT count(idea_id) as 'draft_count' FROM ideas where status = 'DRAFT' || (status = 'SUBMITTED' && verified_by IS NULL)", { type: QueryTypes.SELECT });
             const final_challenges = await db.query("SELECT count(idea_id) as 'final_challenges' FROM evaluation_results where status = 'ACTIVE'", { type: QueryTypes.SELECT });
             const l1_yet_to_process = await db.query(`SELECT COUNT(idea_id) AS l1YetToProcess FROM unisolve_db.ideas WHERE (status = 'SUBMITTED' AND verified_by IS NOT NULL) AND evaluation_status IS NULL OR evaluation_status = '';`, { type: QueryTypes.SELECT });
             const final_evaluation_challenge = await db.query(`SELECT COUNT(idea_id) FROM unisolve_db.ideas WHERE final_result = '0'`, { type: QueryTypes.SELECT });
@@ -910,7 +910,7 @@ export default class DashboardController extends BaseController {
             }
             const { mentor_id, institution_id } = newREQQuery
             if (mentor_id) {
-                result = await db.query(`SELECT count(*) as idea_count FROM ideas join teams on ideas.team_id = teams.team_id where mentor_id = ${mentor_id} && ideas.status = 'SUBMITTED';`, { type: QueryTypes.SELECT });
+                result = await db.query(`SELECT count(*) as idea_count FROM ideas join teams on ideas.team_id = teams.team_id where mentor_id = ${mentor_id} && ideas.status = 'SUBMITTED' && ideas.verified_by IS NOT NULL;`, { type: QueryTypes.SELECT });
             }
             if (institution_id) {
                 result = await db.query(`SELECT 
@@ -923,7 +923,7 @@ export default class DashboardController extends BaseController {
                 mentors ON teams.mentor_id = mentors.mentor_id
             WHERE
                 institution_id = ${institution_id}
-                    && ideas.status = 'SUBMITTED';`, { type: QueryTypes.SELECT });
+                    && ideas.status = 'SUBMITTED' && ideas.verified_by IS NOT NULL;`, { type: QueryTypes.SELECT });
             }
             res.status(200).send(dispatcher(res, result, 'done'))
         }
@@ -1040,7 +1040,8 @@ export default class DashboardController extends BaseController {
             FROM
                 ideas
             WHERE
-                status = 'SUBMITTED') AS temp ON te.team_id = temp.team_id
+                status = 'SUBMITTED'
+                    && verified_by IS NOT NULL) AS temp ON te.team_id = temp.team_id
         WHERE
             ins.status = 'ACTIVE'`, { type: QueryTypes.SELECT })
             result['initiated_ideas'] = Object.values(fullCount[0]).toString()

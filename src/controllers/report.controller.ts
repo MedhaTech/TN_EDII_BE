@@ -437,8 +437,9 @@ export default class ReportController extends BaseController {
                         JOIN
                     ideas ON teams.team_id = ideas.team_id
                 WHERE
-                    ideas.status = 'SUBMITTED'
-                        AND teams.mentor_id = m.mentor_id) AS submittedcout,
+                ideas.status = 'SUBMITTED'
+                AND ideas.verified_by IS NOT NULL
+                AND teams.mentor_id = m.mentor_id) AS submittedcout,
             (SELECT 
                     COUNT(*) AS draftcout
                 FROM
@@ -446,8 +447,10 @@ export default class ReportController extends BaseController {
                         JOIN
                     ideas ON teams.team_id = ideas.team_id
                 WHERE
-                    ideas.status = 'DRAFT'
-                        AND teams.mentor_id = m.mentor_id) AS draftcout
+                (ideas.status = 'DRAFT'
+                || (ideas.status = 'SUBMITTED'
+                AND ideas.verified_by IS NULL))
+                AND teams.mentor_id = m.mentor_id) AS draftcout
         FROM
             (mentors AS m)
                 LEFT JOIN
@@ -823,7 +826,7 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
                 LEFT JOIN
             themes_problems AS the ON i.theme_problem_id = the.theme_problem_id
         WHERE
-            i.status = 'SUBMITTED' ${wherefilter}`, { type: QueryTypes.SELECT });
+            i.status = 'SUBMITTED' && i.verified_by IS NOT NULL ${wherefilter}`, { type: QueryTypes.SELECT });
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
@@ -1240,7 +1243,7 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
             FROM
                 ideas AS i
             WHERE
-                i.status = 'SUBMITTED'
+                i.status = 'SUBMITTED' && i.verified_by IS NOT NULL
             GROUP BY district) AS disWiseCount ON districts.district_name = disWiseCount.district`, { type: QueryTypes.SELECT });
             data = summary;
             if (!data) {
