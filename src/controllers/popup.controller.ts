@@ -39,7 +39,7 @@ export default class popupController extends BaseController {
             let result: any = {};
             let proxyAgent = new HttpsProxyAgent('http://10.236.241.101:9191');
             let s3
-            if(process.env.ISAWSSERVER){
+            if(process.env.ISAWSSERVER === 'YES'){
                 s3 = new S3({
                     apiVersion: '2006-03-01',
                     region: process.env.AWS_REGION,
