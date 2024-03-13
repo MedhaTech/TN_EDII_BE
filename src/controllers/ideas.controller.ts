@@ -584,6 +584,14 @@ export default class ideasController extends BaseController {
                             break;
                     }
                 } else {
+                    let submitedWhereCodition = {}
+                    if (whereClauseStatusPart.status === 'SUBMITTED') {
+                        submitedWhereCodition = { verified_by: { [Op.ne]: null } }
+                    }
+                    if (whereClauseStatusPart.status === 'DRAFT') {
+                        submitedWhereCodition = { verified_by: { [Op.is]: null } }
+                        whereClauseStatusPart = {}
+                    }
                     responseOfFindAndCountAll = await this.crudService.findAndCountAll(ideas, {
                         attributes: [
                             "idea_id",
@@ -665,6 +673,7 @@ export default class ideasController extends BaseController {
                                 condition,
                                 whereClauseStatusPart,
                                 additionalFilter,
+                                submitedWhereCodition
                             ]
                         }, limit, offset,
                     });

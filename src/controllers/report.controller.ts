@@ -437,8 +437,9 @@ export default class ReportController extends BaseController {
                         JOIN
                     ideas ON teams.team_id = ideas.team_id
                 WHERE
-                    ideas.status = 'SUBMITTED'
-                        AND teams.mentor_id = m.mentor_id) AS submittedcout,
+                ideas.status = 'SUBMITTED'
+                AND ideas.verified_by IS NOT NULL
+                AND teams.mentor_id = m.mentor_id) AS submittedcout,
             (SELECT 
                     COUNT(*) AS draftcout
                 FROM
@@ -446,8 +447,10 @@ export default class ReportController extends BaseController {
                         JOIN
                     ideas ON teams.team_id = ideas.team_id
                 WHERE
-                    ideas.status = 'DRAFT'
-                        AND teams.mentor_id = m.mentor_id) AS draftcout
+                (ideas.status = 'DRAFT'
+                || (ideas.status = 'SUBMITTED'
+                AND ideas.verified_by IS NULL))
+                AND teams.mentor_id = m.mentor_id) AS draftcout
         FROM
             (mentors AS m)
                 LEFT JOIN
