@@ -826,7 +826,7 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
                 LEFT JOIN
             themes_problems AS the ON i.theme_problem_id = the.theme_problem_id
         WHERE
-            i.status = 'SUBMITTED' ${wherefilter}`, { type: QueryTypes.SELECT });
+            i.status = 'SUBMITTED' && i.verified_by IS NOT NULL ${wherefilter}`, { type: QueryTypes.SELECT });
             if (!data) {
                 throw notFound(speeches.DATA_NOT_FOUND)
             }
@@ -1243,7 +1243,7 @@ GROUP BY d.district_name`, { type: QueryTypes.SELECT });
             FROM
                 ideas AS i
             WHERE
-                i.status = 'SUBMITTED'
+                i.status = 'SUBMITTED' && i.verified_by IS NOT NULL
             GROUP BY district) AS disWiseCount ON districts.district_name = disWiseCount.district`, { type: QueryTypes.SELECT });
             data = summary;
             if (!data) {
